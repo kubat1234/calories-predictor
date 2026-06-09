@@ -5,14 +5,16 @@ import numpy as np
 
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso, Ridge
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
 
 from src.features import build_text_features
-from src.get_data import load_training_rows
+from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
 def main() -> None:
-	rows = load_training_rows(Path("data/recipes.csv"))[:50000]
+	rows = load_training_rows(Path("data/recipes.csv"))[:200000]
+	rows = filter_rows_by_nutrient_percentile(rows, percentile=98.0)
 
 	texts = [row["instructions"] for row in rows]
 	targets = [float(row["calories"]) for row in rows]
@@ -21,6 +23,8 @@ def main() -> None:
 	print(f"  Srednia: {mean(targets):.2f}")
 	print(f"  Mediana: {median(targets):.2f}")
 	print(f"  Odchylenie standardowe: {stdev(targets):.2f}")
+	print(f"  Min: {min(targets):.2f}")
+	print(f"  Max: {max(targets):.2f}")
 
 	X_train_text, X_test_text, y_train, y_test = train_test_split(
 		texts,
@@ -38,16 +42,25 @@ def main() -> None:
 		max_df=0.8,
 	)
 
-	model = TransformedTargetRegressor(
-		regressor=Ridge(alpha=1.0),
-		func=np.log1p,
-		inverse_func=np.expm1,
-	)
+	print(f"Liczba cech: {X_train.shape[1]}")
+
+	# model = RandomForestRegressor(
+	# 	n_estimators=50,
+	# 	max_depth=20,
+	# 	random_state=42,
+	# 	n_jobs=-1,
+	# )
+
+	# model = TransformedTargetRegressor(
+	# 	regressor=Ridge(),
+	# 	func=np.log1p,
+	# 	inverse_func=np.expm1,
+	# )
+	model = Ridge()
 	
 	print("Trenuję model...")
 	model.fit(X_train, y_train)
 	predictions = model.predict(X_test)
-	predictions = np.clip(predictions, a_min=0, a_max=2000)
 
 	mae = mean_absolute_error(y_test, predictions)
 	rmse = root_mean_squared_error(y_test, predictions)
