@@ -24,6 +24,7 @@ FIELDS = [
 ]
 
 PERCENTILE_CLIP = 99
+ZERO_SAMPLE_LIMIT = 5
 
 
 def print_stats(name: str, values: list[float]) -> None:
@@ -67,6 +68,53 @@ def plot_distribution(
 	print(f"  Wykres zapisany: {out_path}")
 
 
+def plot_calories_vs_text_length(rows: list[dict[str, str]], out_dir: Path) -> None:
+	text_lengths = [len(row["instructions"]) for row in rows]
+	calories = [float(row["calories"]) for row in rows]
+
+	fig, ax = plt.subplots(figsize=(10, 6))
+	fig.suptitle("Kalorie vs długość tekstu przepisu", fontsize=14, fontweight="bold")
+
+	ax.scatter(
+		text_lengths,
+		calories,
+		s=8,
+		alpha=0.2,
+		color="#2E8B57",
+		edgecolors="none",
+	)
+	ax.set_xlabel("Długość instrukcji (liczba znaków)")
+	ax.set_ylabel("Kalorie (kcal)")
+	ax.set_title("Scatter plot")
+	ax.grid(True, linestyle="--", linewidth=0.4, alpha=0.5)
+
+	plt.tight_layout()
+	out_path = out_dir / "calories_vs_text_length.png"
+	plt.savefig(out_path, dpi=150)
+	plt.close(fig)
+	print(f"  Wykres zapisany: {out_path}")
+
+
+def print_zero_value_recipes(rows: list[dict[str, str]], sample_limit: int = ZERO_SAMPLE_LIMIT) -> None:
+	print(f"\n{'═' * 60}")
+	print("  Podejrzane rekordy z zerowymi wartościami")
+	print(f"{'═' * 60}")
+
+	for field, label, _ in FIELDS:
+		zero_rows = [row for row in rows if float(row[field]) == 0.0]
+		print(f"\n{label}: znaleziono {len(zero_rows)} rekordów z wartością 0")
+
+		if not zero_rows:
+			continue
+
+		for idx, row in enumerate(zero_rows[:sample_limit], start=1):
+			instructions_preview = " ".join(row["instructions"].split())
+			instructions_preview = instructions_preview[:220] + ("..." if len(instructions_preview) > 220 else "")
+
+			print(f"  [{idx}] calories={float(row['calories']):.2f}, fat={float(row['fat']):.2f}, carbohydrates={float(row['carbohydrates']):.2f}, protein={float(row['protein']):.2f}")
+			print(f"      Instrukcje: {instructions_preview}")
+
+
 def main() -> None:
 	data_path = Path("data/recipes.csv")
 	img_dir = Path("img")
@@ -80,6 +128,9 @@ def main() -> None:
 		values = [float(row[field]) for row in rows]
 		print_stats(label, values)
 		plot_distribution(values, label, filename, img_dir)
+
+	print_zero_value_recipes(rows)
+	plot_calories_vs_text_length(rows, img_dir)
 
 	print(f"\nGotowe. Wykresy zapisane w folderze: {img_dir.resolve()}")
 

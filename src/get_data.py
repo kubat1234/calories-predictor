@@ -82,6 +82,7 @@ def load_training_rows(path):
 				or carbohydrates == "NA"
 				or not protein
 				or protein == "NA"
+				or calories == "0"
 			):
 				continue
 
