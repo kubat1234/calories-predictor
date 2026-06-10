@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 from src.features import build_text_features
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from src.CustomRandomForestRegressor import CustomRandomForestRegressor
+from models.CustomRandomForestRegressor import CustomRandomForestRegressor
 
 def main() -> None:
 	rows = load_training_rows(Path("data/recipes.csv"))[:20000]
