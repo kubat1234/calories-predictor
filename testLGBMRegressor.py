@@ -1,17 +1,19 @@
 from pathlib import Path
 from statistics import mean, median, stdev
 import numpy as np
+import pandas as pd
 import lightgbm as lgb
 import joblib
-from sklearn.compose import TransformedTargetRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
 
-from src.features import build_text_features
+from sklearn.compose import TransformedTargetRegressor, ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
 def main():
-
     rows = load_training_rows(Path("data/recipes.csv"))[:200000]
     rows = filter_rows_by_nutrient_percentile(rows, percentile=98.0)
 
@@ -26,68 +28,78 @@ def main():
     print(f"  Min: {min(targets):.2f}")
     print(f"  Max: {max(targets):.2f}")
 
-    X_train_text, X_test_text, y_train, y_test, serv_train, serv_test = train_test_split(
-        texts,
-        targets,
-        servings,
-        test_size=0.2,
-        random_state=42,
+    X = pd.DataFrame({
+        "instructions": texts,
+        "servings": servings
+    })
+    y = np.array(targets)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
     )
 
-    X_train_emb, X_test_emb = build_text_features(
-		X_train_text,
-		X_test_text,
-		method="word2vec",
-		ngram_range=(1, 2),
-		min_df=2,
-		max_df=0.8,
-		vector_size = 200
-	)
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('tfidf', TfidfVectorizer(), 'instructions'),
+            ('num', 'passthrough', ['servings'])
+        ]
+    )
 
-    serv_train_col = np.array(serv_train).reshape(-1, 1)
-    serv_test_col = np.array(serv_test).reshape(-1, 1)
+    lgbm_base = lgb.LGBMRegressor(
+        n_estimators=1000,
+        learning_rate=0.05,
+        num_leaves=31,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        n_jobs=-1,
+        random_state=42
+    )
 
-    y_train = np.array(y_train)
-    y_test = np.array(y_test)
+    model = TransformedTargetRegressor(
+        regressor=lgbm_base,
+        func=np.log1p,
+        inverse_func=np.expm1
+    )
 
-    X_train = np.hstack([np.array(X_train_emb), serv_train_col])
-    X_test = np.hstack([np.array(X_test_emb), serv_test_col])
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('model', model)
+    ])
 
-    model_path = Path("lgbm_model.joblib")
+    param_grid = [
+        {
+            'preprocessor__tfidf__max_features': [2000],
+            'preprocessor__tfidf__ngram_range': [(1, 2)],
+            'preprocessor__tfidf__min_df': [2],
+            'preprocessor__tfidf__max_df': [0.8],
+            
+        }
+    ]
+
+    model_path = Path("lgbm_pipeline_model.joblib")
 
     if model_path.exists():
-        print(f"Wczytywanie modelu")
-        model = joblib.load(model_path)
+        print(f"Wczytywanie wytrenowanego potoku z pliku {model_path}...")
+        best_model = joblib.load(model_path)
     else:
-        print("Trenowanie modelu")
-        lgbm_base = lgb.LGBMRegressor(
-            n_estimators=1000,
-            learning_rate=0.05,
-            num_leaves=31,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            n_jobs=-1,
-            random_state=42
-        )
+        print("Trenowanie modelu i optymalizacja parametrów (GridSearchCV)...")
+        search = GridSearchCV(pipeline, param_grid, cv=2, n_jobs=-1, verbose=3)
+        search.fit(X_train, y_train)
+        
+        best_model = search.best_estimator_
+        joblib.dump(best_model, model_path)
+        print(f"Zapisano optymalny estymator do pliku: {model_path}")
 
-        model = TransformedTargetRegressor(
-            regressor=lgbm_base,
-            func=np.log1p,
-            inverse_func=np.expm1
-        )
-
-        model.fit(X_train, y_train)
-
-        joblib.dump(model, model_path)
-
-    print("Ewaluacja...")
-    predictions = model.predict(X_test)
+    print("\nEwaluacja...")
+    predictions = best_model.predict(X_test)
 
     mae = mean_absolute_error(y_test, predictions)
     rmse = root_mean_squared_error(y_test, predictions)
     r2 = r2_score(y_test, predictions)
 
-    print(f"Liczba cech tekstowych: {X_train.shape[1]}")
+    X_train_transformed_shape = best_model.named_steps['preprocessor'].transform(X_train).shape
+
+    print(f"Liczba cech wejściowych (po preprocesingu): {X_train_transformed_shape[1]}")
     print(f"Trening: {len(X_train)}")
     print(f"Test: {len(X_test)}")
     print(f"MAE: {mae:.2f}")
