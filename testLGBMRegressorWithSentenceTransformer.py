@@ -25,7 +25,7 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(
         X_dense, targets, test_size=0.2, random_state=42
     )
-    model_path = Path("lgbm_recipe_model.joblib")
+    model_path = Path("lgbm_recipe_model_with_ts.joblib")
 
     if model_path.exists():
         print(f"Wczytywanie modelu")
