@@ -50,13 +50,9 @@ def main() -> None:
     X_train = np.hstack((X_train_vec, X_train_serv_col))
     X_test = np.hstack((X_test_vec, X_test_serv_col))
 
-    model = TransformedTargetRegressor(
-        regressor=make_pipeline(
-            StandardScaler(),
-            ElasticNetGDRegressor(learning_rate=0.01, max_iter=3000, l1=0.0, l2=0.01)
-        ),
-        func=np.log1p,
-        inverse_func=np.expm1,
+    model =make_pipeline(
+        StandardScaler(),
+        ElasticNetGDRegressor(learning_rate=0.01, max_iter=3000, l1=0.0, l2=0.01)
     )
     
     print("Trenuję model...")

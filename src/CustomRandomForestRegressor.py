@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 
-class NodeRegressor:
+class CustomNodeRegressor:
     def __init__(self, depth):
         self.depth = depth
         self.is_leaf = False
@@ -11,7 +11,7 @@ class NodeRegressor:
         self.left = None
         self.right = None
 
-class DecisionTreeRegressor:
+class CustomDecisionTreeRegressor:
     def __init__(self, max_depth=10, min_samples_split=4, max_features=None):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -22,7 +22,7 @@ class DecisionTreeRegressor:
         self.root = self._build_tree(X, y, depth=0)
 
     def _build_tree(self, X, y, depth):
-        node = NodeRegressor(depth)
+        node = CustomNodeRegressor(depth)
         
         if depth >= self.max_depth or len(y) < self.min_samples_split or np.all(y == y[0]):
             node.is_leaf = True
@@ -104,7 +104,7 @@ class DecisionTreeRegressor:
         return self._predict_single(x, node.right)
 
 
-class RandomForestRegressor(BaseEstimator, RegressorMixin):
+class CustomRandomForestRegressor(BaseEstimator, RegressorMixin):
     def __init__(self, n_estimators=100, max_depth=10, min_samples_split=4, max_features="sqrt", patience=10, tolerance=0.001):
         self.n_estimators = n_estimators
         self.max_depth = max_depth
@@ -133,7 +133,7 @@ class RandomForestRegressor(BaseEstimator, RegressorMixin):
             X_sample = X[indices]
             y_sample = y[indices]
 
-            tree = DecisionTreeRegressor(
+            tree = CustomDecisionTreeRegressor(
                 max_depth=self.max_depth,
                 min_samples_split=self.min_samples_split,
                 max_features=self.max_features
