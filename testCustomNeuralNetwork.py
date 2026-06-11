@@ -82,7 +82,7 @@ def main() -> None:
 	print(f"RMSE: {rmse:.2f}")
 	print(f"R2: {r2:.4f}")
 
-	model_path = "recipe_nn_model.joblib"
+	model_path = "saved/recipe_nn_model.joblib"
 	print(f"Zapisuję model do pliku {model_path}...")
 	joblib.dump(model, model_path)
 	print("Zapis zakończony sukcesem!")

@@ -76,7 +76,7 @@ def main():
         }
     ]
 
-    model_path = Path("lgbm_pipeline_model.joblib")
+    model_path = Path("saved/lgbm_pipeline_model.joblib")
 
     if model_path.exists():
         print(f"Wczytywanie wytrenowanego potoku z pliku {model_path}...")
