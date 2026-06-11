@@ -1,4 +1,5 @@
 import numpy as np
+import importlib
 from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, Phraser
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -158,6 +159,54 @@ class Word2VecVectorizer(BaseEstimator, TransformerMixin):
     def fit_transform(self, X, y=None):
         return self.fit(X, y).transform(X)
 
+
+class SentenceTransformerVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(
+        self,
+        model_name="all-MiniLM-L6-v2",
+        batch_size=128,
+        normalize_embeddings=False,
+        show_progress_bar=False,
+        device=None,
+    ):
+        self.model_name = model_name
+        self.batch_size = batch_size
+        self.normalize_embeddings = normalize_embeddings
+        self.show_progress_bar = show_progress_bar
+        self.device = device
+        self.model = None
+
+    def fit(self, X, y=None):
+        if self.model is not None:
+            return self
+
+        try:
+            sentence_transformers_module = importlib.import_module("sentence_transformers")
+            SentenceTransformer = sentence_transformers_module.SentenceTransformer
+        except ImportError as exc:
+            raise ImportError(
+                "Brak pakietu sentence-transformers. Zainstaluj: pip install sentence-transformers"
+            ) from exc
+
+        self.model = SentenceTransformer(self.model_name, device=self.device)
+        return self
+
+    def transform(self, X):
+        if self.model is None:
+            raise ValueError("SentenceTransformerVectorizer nie jest dopasowany. Najpierw wywołaj fit.")
+
+        embeddings = self.model.encode(
+            list(X),
+            batch_size=self.batch_size,
+            show_progress_bar=self.show_progress_bar,
+            normalize_embeddings=self.normalize_embeddings,
+            convert_to_numpy=True,
+        )
+        return np.asarray(embeddings, dtype=np.float32)
+
+    def fit_transform(self, X, y=None):
+        return self.fit(X, y).transform(X)
+
 def create_vectorizer(
 	method,
 	ngram_range,
@@ -193,6 +242,9 @@ def create_vectorizer(
             max_df=max_df,
             **kwargs,
         )
+
+    if method in {"sentence_transformer", "internet_embedding", "pretrained_embedding"}:
+        return SentenceTransformerVectorizer(**kwargs)
 
     raise ValueError(f"Nieznana metoda wektoryzacji: {method}")
 

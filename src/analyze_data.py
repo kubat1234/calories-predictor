@@ -48,48 +48,30 @@ def plot_distribution(
 	out_dir: Path,
 ) -> None:
 	clip_val = float(np.percentile(values, PERCENTILE_CLIP))
-	clipped = [v for v in values if v <= clip_val]
+	clipped = np.array([v for v in values if v <= clip_val], dtype=float)
+	transformed = np.log1p(clipped)
 
-	fig, ax = plt.subplots(figsize=(10, 5))
-	fig.suptitle(f"Rozkład: {label}", fontsize=14, fontweight="bold")
+	fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+	fig.suptitle(f"Rozkład: {label} vs log1p({label})", fontsize=14, fontweight="bold")
 
-	ax.hist(clipped, bins=80, color="#4C72B0", edgecolor="white", linewidth=0.4)
-	ax.axvline(np.mean(clipped), color="#DD4444", linewidth=1.5, linestyle="--", label=f"Średnia: {np.mean(clipped):.1f}")
-	ax.axvline(np.median(clipped), color="#44AA44", linewidth=1.5, linestyle="-", label=f"Mediana: {np.median(clipped):.1f}")
-	ax.set_xlabel(label)
-	ax.set_ylabel("Liczba przepisów")
-	ax.set_title(f"Histogram (do {PERCENTILE_CLIP}. percentyla)")
-	ax.legend()
+	axes[0].hist(clipped, bins=80, color="#4C72B0", edgecolor="white", linewidth=0.4)
+	axes[0].axvline(np.mean(clipped), color="#DD4444", linewidth=1.5, linestyle="--", label=f"Średnia: {np.mean(clipped):.1f}")
+	axes[0].axvline(np.median(clipped), color="#44AA44", linewidth=1.5, linestyle="-", label=f"Mediana: {np.median(clipped):.1f}")
+	axes[0].set_xlabel(label)
+	axes[0].set_ylabel("Liczba przepisów")
+	axes[0].set_title(f"Histogram (do {PERCENTILE_CLIP}. percentyla)")
+	axes[0].legend()
 
-	plt.tight_layout()
+	axes[1].hist(transformed, bins=80, color="#2A9D8F", edgecolor="white", linewidth=0.4)
+	axes[1].axvline(np.mean(transformed), color="#DD4444", linewidth=1.5, linestyle="--", label=f"Średnia: {np.mean(transformed):.2f}")
+	axes[1].axvline(np.median(transformed), color="#44AA44", linewidth=1.5, linestyle="-", label=f"Mediana: {np.median(transformed):.2f}")
+	axes[1].set_xlabel(f"log1p({label})")
+	axes[1].set_ylabel("Liczba przepisów")
+	axes[1].set_title("Histogram po transformacji np.log1p")
+	axes[1].legend()
+
+	plt.tight_layout(rect=(0, 0, 1, 0.95))
 	out_path = out_dir / f"{filename}.png"
-	plt.savefig(out_path, dpi=150)
-	plt.close(fig)
-	print(f"  Wykres zapisany: {out_path}")
-
-
-def plot_calories_vs_text_length(rows: list[dict[str, str]], out_dir: Path) -> None:
-	text_lengths = [len(row["instructions"]) for row in rows]
-	calories = [float(row["calories"]) for row in rows]
-
-	fig, ax = plt.subplots(figsize=(10, 6))
-	fig.suptitle("Kalorie vs długość tekstu przepisu", fontsize=14, fontweight="bold")
-
-	ax.scatter(
-		text_lengths,
-		calories,
-		s=8,
-		alpha=0.2,
-		color="#2E8B57",
-		edgecolors="none",
-	)
-	ax.set_xlabel("Długość instrukcji (liczba znaków)")
-	ax.set_ylabel("Kalorie (kcal)")
-	ax.set_title("Scatter plot")
-	ax.grid(True, linestyle="--", linewidth=0.4, alpha=0.5)
-
-	plt.tight_layout()
-	out_path = out_dir / "calories_vs_text_length.png"
 	plt.savefig(out_path, dpi=150)
 	plt.close(fig)
 	print(f"  Wykres zapisany: {out_path}")
@@ -130,7 +112,6 @@ def main() -> None:
 		plot_distribution(values, label, filename, img_dir)
 
 	print_zero_value_recipes(rows)
-	plot_calories_vs_text_length(rows, img_dir)
 
 	print(f"\nGotowe. Wykresy zapisane w folderze: {img_dir.resolve()}")
 
