@@ -3,6 +3,7 @@ from time import perf_counter
 
 import numpy as np
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -46,17 +47,17 @@ def build_ridge_pipeline(vectorizer):
 
 def build_vectorizers():
 	vectorizers = [
-		(
-			"count",
-			CountVectorizer(
-				tokenizer=tokenize,
-				token_pattern=None,
-				ngram_range=(1, 2),
-				min_df=3,
-				max_df=0.9,
-				max_features=5000,
-			),
-		),
+		# (
+		# 	"count",
+		# 	CountVectorizer(
+		# 		tokenizer=tokenize,
+		# 		token_pattern=None,
+		# 		ngram_range=(1, 2),
+		# 		min_df=3,
+		# 		max_df=0.9,
+		# 		max_features=2000,
+		# 	),
+		# ),
 		(
 			"tfidf",
 			TfidfVectorizer(
@@ -65,26 +66,26 @@ def build_vectorizers():
 				ngram_range=(1, 2),
 				min_df=3,
 				max_df=0.9,
-				max_features=5000,
+				max_features=2000,
 			),
 		),
-        (
-            "manual_tfidf",
-            ManualTfidfVectorizer(
-                ngram_range=(1, 2),
-                min_df=3,
-                max_df=0.9,
-            ),
-        ),
-        (
-            "word2vec",
-            Word2VecVectorizer(
-                vector_size=64,
-                window=5,
-                min_count=2,
-                epochs=5,
-            ),
-        ),
+        # (
+        #     "manual_tfidf",
+        #     ManualTfidfVectorizer(
+        #         ngram_range=(1, 2),
+        #         min_df=3,
+        #         max_df=0.9,
+        #     ),
+        # ),
+        # (
+        #     "word2vec",
+        #     Word2VecVectorizer(
+        #         vector_size=64,
+        #         window=5,
+        #         min_count=2,
+        #         epochs=5,
+        #     ),
+        # ),
     ]
 
 	return vectorizers
