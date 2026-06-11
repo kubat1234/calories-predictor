@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 
 from src.features import build_text_features
 from src.get_data import load_training_rows
-from src.ElasticNetGDRegressor import ElasticNetGDRegressor
+from models.ElasticNetGDRegressor import ElasticNetGDRegressor
 
 def main() -> None:
     rows = load_training_rows(Path("data/recipes.csv"))[:50000]

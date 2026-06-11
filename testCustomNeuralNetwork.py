@@ -6,9 +6,7 @@ import joblib
 
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
-from sklearn.linear_model import Lasso, Ridge
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
 from src.features import build_text_features
@@ -57,19 +55,6 @@ def main() -> None:
 
 	layer_sizes = [input_dim, 128, 32, 1]
         
-
-	# model = RandomForestRegressor(
-	# 	n_estimators=50,
-	# 	max_depth=20,
-	# 	random_state=42,
-	# 	n_jobs=-1,
-	# )
-
-	# model = TransformedTargetRegressor(
-	# 	regressor=Ridge(),
-	# 	func=np.log1p,
-	# 	inverse_func=np.expm1,
-	# )
 	base_model = CustomNeuralNetworkRegressor(
 		layer_sizes = layer_sizes,
 		epochs = 200,
