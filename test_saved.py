@@ -1,24 +1,26 @@
+import argparse
 from pathlib import Path
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
 
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
+from config import (
+    MAX_TRAIN_ROWS,
+    MAX_TEST_ROWS,
+    PERCENTILE_FILTER,
+    TARGET_NAMES,
+    MODELS_DIR,
+    DATA_PATH
+)
 
-MAX_ROWS = 120_000
-PERCENTILE_FILTER = 99.0
-TEST_SIZE = 0.2
-RANDOM_STATE = 42
-MODEL_PATH = Path("saved/app/manual_tfidf_lgbm.joblib")
-TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
 
-
-def load_data():
-    rows = load_training_rows(Path("data/recipes.csv"))[120000:200000]
+def load_test_data():
+    rows = load_training_rows(DATA_PATH)[MAX_TRAIN_ROWS : MAX_TRAIN_ROWS + MAX_TEST_ROWS]
     rows = filter_rows_by_nutrient_percentile(rows, percentile=PERCENTILE_FILTER)
 
     texts = [row["instructions"] for row in rows]
@@ -28,57 +30,138 @@ def load_data():
         dtype=np.float64,
     )
 
-    X = pd.DataFrame(
+    X_test = pd.DataFrame(
         {
             "instructions": texts,
             "servings": servings,
         }
     )
-    return X, targets
+    return X_test, targets
+
+
+def print_markdown_table(model_name: str, results: list):
+    print(f"\nWyniki dla modelu: **{model_name}**")
+    print("| Target | MAE | MSE | RMSE | R2 |")
+    print("|---|---|---|---|---|")
+    for r in results:
+        print(f"| {r['Target']} | {r['MAE']:.4f} | {r['MSE']:.4f} | {r['RMSE']:.4f} | {r['R2']:.4f} |")
+    print("", flush=True)
+
+
+def save_results_to_png(all_results: list, output_filename: str = "results_summary.png"):
+    df = pd.DataFrame(all_results)
+    if df.empty:
+        return
+        
+    fig, ax = plt.subplots(figsize=(10, 1 + len(df) * 0.3))
+    ax.axis('tight')
+    ax.axis('off')
+    
+    table = ax.table(
+        cellText=df.values, 
+        colLabels=df.columns, 
+        loc='center', 
+        cellLoc='center'
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1.2, 1.5)
+    
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight='bold', color='white')
+            cell.set_facecolor('#4c72b0')
+    
+    plt.title("Zestawienie wyników modeli", pad=20, fontsize=14, weight='bold')
+    plt.savefig(output_filename, bbox_inches='tight', dpi=300)
+    plt.close()
+    print(f"\nZapisano zestawienie wyników do pliku: {output_filename}")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Testuje modele z folderu saved/app")
+    parser.add_argument(
+        "model",
+        nargs="?",
+        default="all",
+        help="Ścieżka do modelu, nazwa pliku z saved/app lub 'all' aby przetestować wszystko (domyślnie)."
+    )
+    return parser.parse_args()
 
 
 def main():
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"Nie znaleziono modelu: {MODEL_PATH.as_posix()}"
-        )
+    args = parse_args()
+    
+    models_to_test = []
+    
+    if args.model.lower() == "all":
+        if not MODELS_DIR.exists():
+            print(f"Katalog {MODELS_DIR} nie istnieje. Nie ma nic do testowania.")
+            return
+        models_to_test = list(MODELS_DIR.glob("*.joblib"))
+    else:
+        model_path = Path(args.model)
+        if not model_path.exists():
+            fallback_path = MODELS_DIR / args.model
+            if fallback_path.exists():
+                models_to_test = [fallback_path]
+            else:
+                raise FileNotFoundError(f"Nie znaleziono modelu: {model_path.as_posix()} ani {fallback_path.as_posix()}")
+        else:
+            models_to_test = [model_path]
 
-    print(f"Wczytywanie modelu: {MODEL_PATH.as_posix()}")
-    model = joblib.load(MODEL_PATH)
+    if not models_to_test:
+        print("Nie znaleziono żadnych modeli do przetestowania.")
+        return
 
-    print("Wczytywanie danych i podział train/test...")
-    X, y = load_data()
-    _, X_test, _, y_test = train_test_split(
-        X,
-        y,
-        test_size=TEST_SIZE,
-        random_state=RANDOM_STATE,
-    )
+    print("Wczytywanie i filtrowanie danych testowych...")
+    X_test, y_test = load_test_data()
+    print(f"Dane wczytane. Rozmiar zbioru testowego: {len(X_test):,} próbek.\n")
 
-    print("Predykcja na zbiorze testowym...")
-    predictions = model.predict(X_test)
+    all_results = []
 
-    print(f"Test size: {len(X_test)}")
-    if np.ndim(predictions) == 1:
-        predictions = predictions.reshape(-1, 1)
+    for path in models_to_test:
+        model_name = path.stem
+        print(f"--> Testowanie modelu: {model_name} ...")
+        
+        try:
+            model = joblib.load(path)
+            predictions = model.predict(X_test)
+            
+            if np.ndim(predictions) == 1:
+                predictions = predictions.reshape(-1, 1)
 
-    for idx, target_name in enumerate(TARGET_NAMES):
-        if idx >= predictions.shape[1]:
-            break
+            model_metrics = []
+            for idx, target_name in enumerate(TARGET_NAMES):
+                if idx >= predictions.shape[1]:
+                    break
 
-        y_true_target = y_test[:, idx]
-        y_pred_target = predictions[:, idx]
+                y_true_target = y_test[:, idx]
+                y_pred_target = predictions[:, idx]
 
-        mae = mean_absolute_error(y_true_target, y_pred_target)
-        mse = mean_squared_error(y_true_target, y_pred_target)
-        rmse = np.sqrt(mse)
-        r2 = r2_score(y_true_target, y_pred_target)
+                mae = mean_absolute_error(y_true_target, y_pred_target)
+                mse = mean_squared_error(y_true_target, y_pred_target)
+                rmse = np.sqrt(mse)
+                r2 = r2_score(y_true_target, y_pred_target)
 
-        print(f"{target_name}:")
-        print(f"  MAE: {mae:.4f}")
-        print(f"  MSE: {mse:.4f}")
-        print(f"  RMSE: {rmse:.4f}")
-        print(f"  R2: {r2:.4f}")
+                metric_row = {
+                    "Model": model_name,
+                    "Target": target_name,
+                    "MAE": mae,
+                    "MSE": mse,
+                    "RMSE": rmse,
+                    "R2": r2
+                }
+                model_metrics.append(metric_row)
+                all_results.append(metric_row)
+
+            print_markdown_table(model_name, model_metrics)
+
+        except Exception as e:
+            print(f"Błąd podczas testowania {model_name}: {e}\n")
+
+    if all_results:
+        save_results_to_png(all_results)
 
 
 if __name__ == "__main__":

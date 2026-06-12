@@ -13,7 +13,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import Ridge
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
@@ -22,13 +21,15 @@ from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
 from src.tokenize import tokenize
 
-
-MAX_ROWS = 120_000
-PERCENTILE_FILTER = 99.0
-TEST_SIZE = 0.2
-RANDOM_STATE = 42
-TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
-TFIDF_MAX_FEATURES = 2000
+from config import (
+    RANDOM_SEED,
+    MAX_TRAIN_ROWS,
+    PERCENTILE_FILTER,
+    TARGET_NAMES,
+    TFIDF_MAX_FEATURES,
+    DATA_PATH,
+    MODELS_DIR
+)
 
 SELECTED_EXPERIMENTS = [
     ("tfidf", "ridge"),
@@ -60,7 +61,7 @@ def build_models():
                 subsample=0.8,
                 colsample_bytree=0.8,
                 n_jobs=-1,
-                random_state=RANDOM_STATE,
+                random_state=RANDOM_SEED, 
                 verbose=-1,
             ),
             func=np.log1p,
@@ -89,7 +90,7 @@ def build_models():
             "factory": lambda: RandomForestRegressor(
                 n_estimators=10,
                 max_depth=15,
-                random_state=RANDOM_STATE,
+                random_state=RANDOM_SEED,
                 n_jobs=-1,
             ),
             "requires_dense": True,
@@ -102,7 +103,7 @@ def build_models():
                 activation="relu",
                 solver="adam",
                 max_iter=200,
-                random_state=RANDOM_STATE,
+                random_state=RANDOM_SEED, 
             ),
             "requires_dense": True,
             "supports_multioutput": True,
@@ -189,7 +190,7 @@ def build_pipeline(vectorizer_factory, model_factory, requires_dense, supports_m
 
 
 def load_data():
-    rows = load_training_rows(Path("data/recipes.csv"))[:MAX_ROWS]
+    rows = load_training_rows(DATA_PATH)[:MAX_TRAIN_ROWS]
     rows = filter_rows_by_nutrient_percentile(rows, percentile=PERCENTILE_FILTER)
 
     texts = [row["instructions"] for row in rows]
@@ -226,7 +227,7 @@ def main():
     vectorizers = build_vectorizers()
     models = build_models()
 
-    output_dir = Path("saved/app")
+    output_dir = MODELS_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     to_train = []
@@ -243,16 +244,8 @@ def main():
 
     print("Wczytuje dane treningowe...")
     X, y = load_data()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=TEST_SIZE,
-        random_state=RANDOM_STATE,
-    )
-    print(
-        f"Liczba probek: {len(X):,}, train={len(X_train):,}, "
-        f"test={len(X_test):,}, liczba targetow: {len(TARGET_NAMES)}"
-    )
+    
+    print(f"Liczba probek treningowych: {len(X):,}, liczba targetow: {len(TARGET_NAMES)}")
 
     for vectorizer_name, model_name, out_path in to_train:
         print(f"\nTrening: {vectorizer_name} + {model_name}")
@@ -267,7 +260,7 @@ def main():
             uses_servings=model_info.get("uses_servings", False),
         )
         
-        pipeline.fit(X_train, y_train)
+        pipeline.fit(X, y)
         joblib.dump(pipeline, out_path)
 
         elapsed = perf_counter() - start
