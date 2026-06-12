@@ -79,8 +79,8 @@ def build_models():
             "factory": lambda: ElasticNetGDRegressor(
                 learning_rate=0.01,
                 max_iter=1000,
-                l1=0.0001,
-                l2=0.0001,
+                l1=0.01,
+                l2=0.005,
             ),
             "requires_dense": False,
             "supports_multioutput": False,
