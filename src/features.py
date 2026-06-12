@@ -63,12 +63,14 @@ class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
         ngram_range=(1, 2),
         min_df=2,
         max_df=0.8,
+        max_features=None,    
         keyword_categories=None,
         **tfidf_kwargs,
     ):
         self.ngram_range = ngram_range
         self.min_df = min_df
         self.max_df = max_df
+        self.max_features = max_features
         self.keyword_categories = keyword_categories
         self.tfidf_kwargs = tfidf_kwargs
         self.column_transformer = None
@@ -87,6 +89,7 @@ class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
                         ngram_range=self.ngram_range,
                         min_df=self.min_df,
                         max_df=self.max_df,
+                        max_features=self.max_features,
                         **self.tfidf_kwargs,
                     ),
                     0,
