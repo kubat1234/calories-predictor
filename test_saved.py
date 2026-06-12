@@ -53,6 +53,10 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
     if df.empty:
         return
         
+    for col in ["MAE", "MSE", "RMSE", "R2"]:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: f"{x:.3f}")
+    
     fig, ax = plt.subplots(figsize=(10, 1 + len(df) * 0.3))
     ax.axis('tight')
     ax.axis('off')
