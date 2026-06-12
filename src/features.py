@@ -11,6 +11,11 @@ from scipy.sparse import csr_matrix
 from src.tokenize import add_ngrams, tokenize
 
 
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import FeatureUnion
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
 class ManualFeatures(BaseEstimator, TransformerMixin):
     def __init__(self, keyword_categories=None):
         self.keyword_categories = keyword_categories or {
@@ -54,7 +59,7 @@ class ManualFeatures(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        return csr_matrix(self._manual_features(X))
+        return self._manual_features(X)
 
 
 class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
@@ -63,7 +68,7 @@ class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
         ngram_range=(1, 2),
         min_df=2,
         max_df=0.8,
-        max_features=None,    
+        max_features=None,          
         keyword_categories=None,
         **tfidf_kwargs,
     ):
@@ -73,14 +78,11 @@ class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
         self.max_features = max_features
         self.keyword_categories = keyword_categories
         self.tfidf_kwargs = tfidf_kwargs
-        self.column_transformer = None
-
-    def _to_2d(self, X):
-        return np.asarray(list(X), dtype=object).reshape(-1, 1)
+        self.feature_union = None
 
     def fit(self, X, y=None):
-        self.column_transformer = ColumnTransformer(
-            transformers=[
+        self.feature_union = FeatureUnion(
+            transformer_list=[
                 (
                     "tfidf",
                     TfidfVectorizer(
@@ -92,23 +94,20 @@ class ManualTfidfVectorizer(BaseEstimator, TransformerMixin):
                         max_features=self.max_features,
                         **self.tfidf_kwargs,
                     ),
-                    0,
                 ),
                 (
                     "manual",
                     ManualFeatures(keyword_categories=self.keyword_categories),
-                    0,
                 ),
-            ],
-            sparse_threshold=1.0,
+            ]
         )
-        self.column_transformer.fit(self._to_2d(X), y)
+        self.feature_union.fit(X, y)
         return self
 
     def transform(self, X):
-        if self.column_transformer is None:
+        if self.feature_union is None:
             raise ValueError("ManualTfidfVectorizer nie jest dopasowany. Najpierw wywołaj fit.")
-        return self.column_transformer.transform(self._to_2d(X))
+        return self.feature_union.transform(X)
 
     def fit_transform(self, X, y=None):
         return self.fit(X, y).transform(X)

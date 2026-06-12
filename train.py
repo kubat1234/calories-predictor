@@ -76,11 +76,15 @@ def build_models():
             "uses_servings": False,
         },
         "elasticnet_gd": {
-            "factory": lambda: ElasticNetGDRegressor(
-                learning_rate=0.01,
-                max_iter=1000,
-                l1=0.01,
-                l2=0.005,
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=ElasticNetGDRegressor(
+                    learning_rate=0.05, 
+                    max_iter=2000,   
+                    l1=0.001, 
+                    l2=0.001,
+                ),
+                func=np.log1p,
+                inverse_func=np.expm1,
             ),
             "requires_dense": False,
             "supports_multioutput": False,
@@ -248,7 +252,8 @@ def main():
     print(f"Liczba probek treningowych: {len(X):,}, liczba targetow: {len(TARGET_NAMES)}")
 
     for vectorizer_name, model_name, out_path in to_train:
-        print(f"\nTrening: {vectorizer_name} + {model_name}")
+        print(f"\n{'-'*50}")
+        print(f"Eksperyment: {vectorizer_name} + {model_name}")
         start = perf_counter()
 
         model_info = models[model_name]
@@ -260,13 +265,24 @@ def main():
             uses_servings=model_info.get("uses_servings", False),
         )
         
-        pipeline.fit(X, y)
+        print("  1. Wektoryzacja danych...")
+        X_transformed = X
+        for step_name, step in pipeline.steps[:-1]:
+            X_transformed = step.fit_transform(X_transformed, y)
+            
+        num_features = X_transformed.shape[1]
+        print(f"  => Rzeczywista liczba cech (features) wejściowych: {num_features}")
+        
+        print("  2. Trenowanie modelu (może chwilę potrwać)...")
+        final_step_name, final_model = pipeline.steps[-1]
+        final_model.fit(X_transformed, y)
+
         joblib.dump(pipeline, out_path)
 
         elapsed = perf_counter() - start
-        print(f"Zapisano: {out_path.as_posix()} ({elapsed:.1f}s)")
+        print(f"Gotowe! Zapisano: {out_path.as_posix()} (Całkowity czas: {elapsed:.1f}s)")
 
-    print("\nGotowe.")
+    print("\nZakończono wszystkie eksperymenty.")
 
 
 if __name__ == "__main__":
