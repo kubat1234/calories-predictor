@@ -13,6 +13,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import Ridge
 from sklearn.multioutput import MultiOutputRegressor
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
@@ -24,6 +25,7 @@ from src.tokenize import tokenize
 
 MAX_ROWS = 120_000
 PERCENTILE_FILTER = 99.0
+TEST_SIZE = 0.2
 RANDOM_STATE = 42
 TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
 TFIDF_MAX_FEATURES = 2000
@@ -241,7 +243,16 @@ def main():
 
     print("Wczytuje dane treningowe...")
     X, y = load_data()
-    print(f"Liczba probek: {len(X):,}, liczba targetow: {len(TARGET_NAMES)}")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=TEST_SIZE,
+        random_state=RANDOM_STATE,
+    )
+    print(
+        f"Liczba probek: {len(X):,}, train={len(X_train):,}, "
+        f"test={len(X_test):,}, liczba targetow: {len(TARGET_NAMES)}"
+    )
 
     for vectorizer_name, model_name, out_path in to_train:
         print(f"\nTrening: {vectorizer_name} + {model_name}")
@@ -256,7 +267,7 @@ def main():
             uses_servings=model_info.get("uses_servings", False),
         )
         
-        pipeline.fit(X, y)
+        pipeline.fit(X_train, y_train)
         joblib.dump(pipeline, out_path)
 
         elapsed = perf_counter() - start

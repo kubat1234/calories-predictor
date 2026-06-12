@@ -4,12 +4,23 @@ import numpy as np
 from pathlib import Path
 import time
 
+import scipy.sparse as sp
+from sklearn.base import BaseEstimator, TransformerMixin
+
 import joblib
 
 
 TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
 MODELS_DIR = Path("saved/app")
 
+class ToDenseTransformer(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        if sp.issparse(X):
+            return X.toarray()
+        return np.asarray(X)
 
 def find_saved_models(models_dir: Path):
     if not models_dir.exists():
@@ -27,8 +38,6 @@ def humanize_model_name(model_stem: str) -> str:
         "manual_tfidf": "Manual TF-IDF",
         "word2vec": "Word2Vec",
         "ridge": "Ridge",
-        "random": "Random",
-        "forest": "Forest",
         "random_forest": "Random Forest",
         "elasticnet": "ElasticNet",
         "gd": "GD",
@@ -69,6 +78,32 @@ def parse_prediction(prediction):
         padded[0] = values[0]
     return padded
 
+
+def model_requires_servings(model_stem: str, model) -> bool:
+    if model_stem.endswith("_servings"):
+        return True
+
+    preprocessor = None
+    if hasattr(model, "named_steps"):
+        preprocessor = model.named_steps.get("preprocessor")
+
+    if preprocessor is None or not hasattr(preprocessor, "transformers"):
+        return False
+
+    for _, _, columns in preprocessor.transformers:
+        if columns == "servings":
+            return True
+        if isinstance(columns, (list, tuple)) and "servings" in columns:
+            return True
+    return False
+
+
+def build_model_input(recipe_text: str, requires_servings: bool, servings: float):
+    payload = {"instructions": [recipe_text]}
+    if requires_servings:
+        payload["servings"] = [float(servings)]
+    return pd.DataFrame(payload)
+
 st.set_page_config(page_title="Calories Predictor", page_icon="🍳", layout="centered")
 
 st.title("🍳 AI Calories Predictor")
@@ -87,22 +122,35 @@ label_to_stem = {
 selected_label = st.selectbox("Available models", list(label_to_stem.keys()))
 selected_model = label_to_stem[selected_label]
 
+model_path = saved_models[selected_model]
+loaded_model = load_model(model_path.as_posix())
+requires_servings = model_requires_servings(selected_model, loaded_model)
+
 recipe_text = st.text_area(
     "Recipe text:", 
     height=200, 
     placeholder="E.g. Mix 200g of butter with two cups of flour and add 3 eggs..."
 )
 
+servings_value = 1.0
+if requires_servings:
+    servings_value = st.number_input(
+        "Servings",
+        min_value=0.1,
+        value=1.0,
+        step=0.1,
+        help="This model uses servings as an additional numeric feature.",
+    )
+
 if st.button("Predict nutrition", type="primary"):
     if recipe_text.strip() == "":
         st.warning("Please enter a recipe first!")
     else:
-        model_path = saved_models[selected_model]
         with st.spinner("Model is analyzing the text..."):
             try:
                 time.sleep(1.2)
-                model = load_model(model_path.as_posix())
-                prediction = model.predict([recipe_text])
+                model_input = build_model_input(recipe_text, requires_servings, servings_value)
+                prediction = loaded_model.predict(model_input)
                 values = parse_prediction(prediction)
             except Exception as exc:
                 st.error(f"Prediction failed: {exc}")
