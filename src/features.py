@@ -1,20 +1,132 @@
 import numpy as np
 import importlib
+from collections import defaultdict
 from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, Phraser
+import scipy.sparse as sp
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.utils.validation import check_is_fitted
 from scipy.sparse import csr_matrix
 
 from src.tokenize import add_ngrams, tokenize
-
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
+
+class MyTfidfVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(self, max_df=1.0, min_df=1, max_features=None):
+        self.max_df = max_df
+        self.min_df = min_df
+        self.max_features = max_features
+
+    def fit(self, X, y=None):
+        self.fit_transform(X)
+        return self
+
+    def fit_transform(self, X, y=None):
+        N = len(X)
+        df_counts = defaultdict(int)
+        tf_counts = defaultdict(int)
+        parsed_docs = []
+
+        for doc in X:
+            tokens = tokenize(doc)
+            term_counts = defaultdict(int)
+            for token in tokens:
+                term_counts[token] += 1
+            for token, count in term_counts.items():
+                df_counts[token] += 1
+                tf_counts[token] += count
+            parsed_docs.append(term_counts)
+
+        max_doc_count = self.max_df if isinstance(self.max_df, int) else self.max_df * N
+        min_doc_count = self.min_df if isinstance(self.min_df, int) else self.min_df * N
+
+        valid_terms = {
+            t for t, df in df_counts.items()
+            if min_doc_count <= df <= max_doc_count
+        }
+
+        if self.max_features is not None:
+            sorted_terms = sorted(
+                [(t, tf_counts[t]) for t in valid_terms],
+                key=lambda x: x[1],
+                reverse=True
+            )
+            valid_terms = {t for t, _ in sorted_terms[:self.max_features]}
+
+        self.vocabulary_ = {term: idx for idx, term in enumerate(valid_terms)}
+        vocab_size = len(self.vocabulary_)
+
+        row_indices, col_indices, values = [], [], []
+        for doc_idx, term_counts in enumerate(parsed_docs):
+            for token, count in term_counts.items():
+                if token in self.vocabulary_:
+                    row_indices.append(doc_idx)
+                    col_indices.append(self.vocabulary_[token])
+                    values.append(count)
+
+        tf_matrix = sp.csr_matrix(
+            (values, (row_indices, col_indices)), 
+            shape=(N, vocab_size), 
+            dtype=np.float64
+        )
+
+        if vocab_size > 0:
+            df = np.bincount(tf_matrix.indices, minlength=vocab_size)
+            self.idf_ = np.log((1.0 + N) / (1.0 + df)) + 1.0
+        else:
+            self.idf_ = np.array([])
+
+        return self._apply_idf_and_normalize(tf_matrix)
+
+    def transform(self, X, y=None):
+        check_is_fitted(self, ['vocabulary_', 'idf_'])
+        
+        row_indices, col_indices, values = [], [], []
+        vocab_size = len(self.vocabulary_)
+        N = len(X)
+        
+        for doc_idx, doc in enumerate(X):
+            tokens = tokenize(doc)
+            term_counts = defaultdict(int)
+            for token in tokens:
+                if token in self.vocabulary_:
+                    term_counts[token] += 1
+                    
+            for token, count in term_counts.items():
+                row_indices.append(doc_idx)
+                col_indices.append(self.vocabulary_[token])
+                values.append(count)
+
+        tf_matrix = sp.csr_matrix(
+            (values, (row_indices, col_indices)), 
+            shape=(N, vocab_size), 
+            dtype=np.float64
+        )
+        
+        return self._apply_idf_and_normalize(tf_matrix)
+
+    def _apply_idf_and_normalize(self, tf_matrix):
+        N, vocab_size = tf_matrix.shape
+        
+        if vocab_size == 0:
+            return tf_matrix
+            
+        idf_diag = sp.diags(self.idf_, offsets=0, shape=(vocab_size, vocab_size))
+        X_tfidf = tf_matrix * idf_diag
+
+        norms = sp.linalg.norm(X_tfidf, axis=1)
+        norms[norms == 0] = 1.0
+        norm_diag = sp.diags(1.0 / norms, offsets=0, shape=(N, N))
+        X_tfidf = norm_diag * X_tfidf
+
+        return X_tfidf
 
 class ManualFeatures(BaseEstimator, TransformerMixin):
     def __init__(self, keyword_categories=None):
@@ -208,67 +320,3 @@ class SentenceTransformerVectorizer(BaseEstimator, TransformerMixin):
 
     def fit_transform(self, X, y=None):
         return self.fit(X, y).transform(X)
-
-def create_vectorizer(
-	method,
-	ngram_range,
-	min_df,
-	max_df,
-	**kwargs,
-):
-    if method == "tfidf":
-        return TfidfVectorizer(
-                tokenizer=tokenize,
-                token_pattern=None,
-                ngram_range=ngram_range, 
-                min_df=min_df, 
-                max_df=max_df, 
-                **kwargs)
-
-    if method == "count":
-        return CountVectorizer(
-                tokenizer=tokenize,
-            	token_pattern=None,
-            	ngram_range=ngram_range,
-                min_df=min_df, 
-                max_df=max_df, 
-                **kwargs)
-      
-    if method == "word2vec":
-        return Word2VecVectorizer(min_count=min_df, **kwargs)
-
-    if method == "manual":
-        return ManualTfidfVectorizer(
-            ngram_range=ngram_range,
-            min_df=min_df,
-            max_df=max_df,
-            **kwargs,
-        )
-
-    if method in {"sentence_transformer", "internet_embedding", "pretrained_embedding"}:
-        return SentenceTransformerVectorizer(**kwargs)
-
-    raise ValueError(f"Nieznana metoda wektoryzacji: {method}")
-
-def build_text_features(
-	train_texts,
-	test_texts,
-	method,
-	ngram_range,
-	min_df,
-	max_df,
-	vectorizer=None,
-	**vectorizer_kwargs,
-):
-	if vectorizer is None:
-		vectorizer = create_vectorizer(
-			method=method,
-			ngram_range=ngram_range,
-			min_df=min_df,
-			max_df=max_df,
-			**vectorizer_kwargs,
-		)
-
-	X_train = vectorizer.fit_transform(train_texts)
-	X_test = vectorizer.transform(test_texts)
-	return X_train, X_test
