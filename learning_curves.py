@@ -1,10 +1,13 @@
 from pathlib import Path
 from time import perf_counter
 
+import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.sparse as sp
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import Ridge
@@ -28,9 +31,13 @@ TRAIN_SIZES = np.linspace(0.05, 1.0, 8)
 VAL_SIZE = 0.2
 
 EXPERIMENTS = [
-    ("tfidf", "ridge"),
+    # ("tfidf", "ridge"),
     ("tfidf", "elasticnet_gd"),
-    ("tfidf", "random_forest"),
+    # ("tfidf", "random_forest"),
+    # ("tfidf", "lgbm"),          
+    # ("tfidf", "lgbm_servings"),  
+    ("manual_tfidf", "lgbm"),          
+    ("manual_tfidf", "lgbm_servings"),  
 ]
 
 
@@ -63,9 +70,12 @@ def build_vectorizers():
             max_features=2000,
         ),
         "manual_tfidf": lambda: ManualTfidfVectorizer(
+            tokenizer=tokenize,
+            token_pattern=None,
             ngram_range=(1, 2),
             min_df=3,
             max_df=0.9,
+            max_features=2000,
         ),
         "word2vec": lambda: Word2VecVectorizer(
             vector_size=64,
@@ -77,10 +87,27 @@ def build_vectorizers():
 
 
 def build_models():
+    def make_lgbm():
+        return TransformedTargetRegressor(
+            regressor=lgb.LGBMRegressor(
+                n_estimators=1000,
+                learning_rate=0.05,
+                num_leaves=31,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                n_jobs=-1,
+                random_state=RANDOM_STATE,
+                verbose=-1,
+            ),
+            func=np.log1p,
+            inverse_func=np.expm1,
+        )
+
     return {
         "ridge": {
             "factory": lambda: Ridge(alpha=1.0),
             "requires_dense": False,
+            "uses_servings": False,
         },
         "random_forest": {
             "factory": lambda: RandomForestRegressor(
@@ -91,6 +118,7 @@ def build_models():
                 verbose=1,
             ),
             "requires_dense": True,
+            "uses_servings": False,
         },
         "elasticnet_gd": {
             "factory": lambda: ElasticNetGDRegressor(
@@ -100,6 +128,7 @@ def build_models():
                 l2=0.0001,
             ),
             "requires_dense": False,
+            "uses_servings": False,
         },
         "mlp": {
             "factory": lambda: MLPRegressor(
@@ -110,6 +139,17 @@ def build_models():
                 random_state=RANDOM_STATE,
             ),
             "requires_dense": True,
+            "uses_servings": False,
+        },
+        "lgbm": {
+            "factory": make_lgbm,
+            "requires_dense": False,
+            "uses_servings": False,  
+        },
+        "lgbm_servings": {
+            "factory": make_lgbm,
+            "requires_dense": False,
+            "uses_servings": True,  
         },
     }
 
@@ -129,18 +169,43 @@ def load_data():
         raise ValueError(f"Nieznany TARGET_NAME='{TARGET_NAME}'. Dostepne: {valid}")
 
     texts = [row["instructions"] for row in rows]
+    servings = [float(row["servings"]) for row in rows]
+    
     y = np.array([float(row[target_to_index[TARGET_NAME]]) for row in rows], dtype=np.float64)
 
-    return texts, y
+    X = pd.DataFrame({
+        "instructions": texts,
+        "servings": servings
+    })
+
+    return X, y
 
 
 def sanitize_name(name: str) -> str:
     return "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in name)
 
-def build_pipeline(vectorizer_factory, model_factory, requires_dense):
-    steps = [("vectorizer", vectorizer_factory())]
+
+def build_pipeline(vectorizer_factory, model_factory, requires_dense, uses_servings):
+    if uses_servings:
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('text', vectorizer_factory(), 'instructions'),
+                ('num', 'passthrough', ['servings'])
+            ]
+        )
+    else:
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('text', vectorizer_factory(), 'instructions')
+            ],
+            remainder='drop'
+        )
+
+    steps = [("preprocessor", preprocessor)]
+    
     if requires_dense:
         steps.append(("to_dense", ToDenseTransformer()))
+        
     steps.append(("model", model_factory()))
     return Pipeline(steps)
 
@@ -155,7 +220,7 @@ def compute_holdout_curve(pipeline, X_train, y_train, X_val, y_val, train_sizes)
         size = max(2, int(n_train * float(frac)))
         size = min(size, n_train)
 
-        X_part = X_train[:size]
+        X_part = X_train.iloc[:size]
         y_part = y_train[:size]
 
         pipeline.fit(X_part, y_part)
@@ -171,7 +236,6 @@ def compute_holdout_curve(pipeline, X_train, y_train, X_val, y_val, train_sizes)
 
 
 def plot_curve(train_sizes_abs, train_mae, val_mae, title, output_path):
-
     fig, ax = plt.subplots(figsize=(9, 6))
     ax.plot(train_sizes_abs, train_mae, marker="o", label="train")
     ax.plot(train_sizes_abs, val_mae, marker="o", label="val")
@@ -218,6 +282,7 @@ def main():
             vectorizer_factory=vectorizers[vec_name],
             model_factory=model_info["factory"],
             requires_dense=model_info["requires_dense"],
+            uses_servings=model_info.get("uses_servings", False),
         )
 
         job_start = perf_counter()
