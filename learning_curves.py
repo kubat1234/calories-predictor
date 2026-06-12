@@ -1,157 +1,34 @@
 from pathlib import Path
 from time import perf_counter
 
-import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.sparse as sp
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import r2_score 
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import Pipeline
 
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
-from src.tokenize import tokenize
+from config_models import build_models, build_vectorizers, build_pipeline
 
+from config_constants import (MAX_TRAIN_ROWS, PERCENTILE_FILTER, RANDOM_SEED)
 
-MAX_ROWS = 120_000
-PERCENTILE_FILTER = 99.0
-RANDOM_STATE = 42
+MAX_ROWS = 60000
+PERCENTILE_FILTER = PERCENTILE_FILTER
+RANDOM_STATE = RANDOM_SEED
 
 TARGET_NAME = "calories"
 TRAIN_SIZES = np.linspace(0.05, 1.0, 8)
 VAL_SIZE = 0.2
 
 EXPERIMENTS = [
-    # ("tfidf", "ridge"),
-    ("tfidf", "elasticnet_gd"),
-    # ("tfidf", "random_forest"),
-    # ("tfidf", "lgbm"),          
-    # ("tfidf", "lgbm_servings"),  
+    ("tfidf", "ridge"),
+    ("manual_tfidf", "ridge"),
+    ("tfidf", "random_forest"),
+    ("tfidf", "lgbm"),          
+    ("tfidf", "lgbm_servings"),  
     ("manual_tfidf", "lgbm"),          
     ("manual_tfidf", "lgbm_servings"),  
 ]
-
-
-class ToDenseTransformer(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        if sp.issparse(X):
-            return X.toarray()
-        return np.asarray(X)
-
-
-def build_vectorizers():
-    return {
-        "count": lambda: CountVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=2000,
-        ),
-        "tfidf": lambda: TfidfVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=2000,
-        ),
-        "manual_tfidf": lambda: ManualTfidfVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=2000,
-        ),
-        "word2vec": lambda: Word2VecVectorizer(
-            vector_size=64,
-            window=5,
-            min_count=2,
-            epochs=5,
-        ),
-    }
-
-
-def build_models():
-    def make_lgbm():
-        return TransformedTargetRegressor(
-            regressor=lgb.LGBMRegressor(
-                n_estimators=1000,
-                learning_rate=0.05,
-                num_leaves=31,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                n_jobs=-1,
-                random_state=RANDOM_STATE,
-                verbose=-1,
-            ),
-            func=np.log1p,
-            inverse_func=np.expm1,
-        )
-
-    return {
-        "ridge": {
-            "factory": lambda: Ridge(alpha=1.0),
-            "requires_dense": False,
-            "uses_servings": False,
-        },
-        "random_forest": {
-            "factory": lambda: RandomForestRegressor(
-                n_estimators=10,
-                max_depth=15,
-                random_state=RANDOM_STATE,
-                n_jobs=-1,
-                verbose=1,
-            ),
-            "requires_dense": True,
-            "uses_servings": False,
-        },
-        "elasticnet_gd": {
-            "factory": lambda: ElasticNetGDRegressor(
-                learning_rate=0.01,
-                max_iter=1000,
-                l1=0.0001,
-                l2=0.0001,
-            ),
-            "requires_dense": False,
-            "uses_servings": False,
-        },
-        "mlp": {
-            "factory": lambda: MLPRegressor(
-                hidden_layer_sizes=(100,),
-                activation="relu",
-                solver="adam",
-                max_iter=200,
-                random_state=RANDOM_STATE,
-            ),
-            "requires_dense": True,
-            "uses_servings": False,
-        },
-        "lgbm": {
-            "factory": make_lgbm,
-            "requires_dense": False,
-            "uses_servings": False,  
-        },
-        "lgbm_servings": {
-            "factory": make_lgbm,
-            "requires_dense": False,
-            "uses_servings": True,  
-        },
-    }
 
 
 def load_data():
@@ -185,34 +62,9 @@ def sanitize_name(name: str) -> str:
     return "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in name)
 
 
-def build_pipeline(vectorizer_factory, model_factory, requires_dense, uses_servings):
-    if uses_servings:
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ('text', vectorizer_factory(), 'instructions'),
-                ('num', 'passthrough', ['servings'])
-            ]
-        )
-    else:
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ('text', vectorizer_factory(), 'instructions')
-            ],
-            remainder='drop'
-        )
-
-    steps = [("preprocessor", preprocessor)]
-    
-    if requires_dense:
-        steps.append(("to_dense", ToDenseTransformer()))
-        
-    steps.append(("model", model_factory()))
-    return Pipeline(steps)
-
-
 def compute_holdout_curve(pipeline, X_train, y_train, X_val, y_val, train_sizes):
-    train_mae = []
-    val_mae = []
+    train_r2 = []  
+    val_r2 = []
     train_sizes_abs = []
 
     n_train = len(X_train)
@@ -228,21 +80,21 @@ def compute_holdout_curve(pipeline, X_train, y_train, X_val, y_val, train_sizes)
         y_train_pred = pipeline.predict(X_part)
         y_val_pred = pipeline.predict(X_val)
 
-        train_mae.append(mean_absolute_error(y_part, y_train_pred))
-        val_mae.append(mean_absolute_error(y_val, y_val_pred))
+        train_r2.append(r2_score(y_part, y_train_pred))
+        val_r2.append(r2_score(y_val, y_val_pred))
         train_sizes_abs.append(size)
 
-    return np.array(train_sizes_abs), np.array(train_mae), np.array(val_mae)
+    return np.array(train_sizes_abs), np.array(train_r2), np.array(val_r2)
 
 
-def plot_curve(train_sizes_abs, train_mae, val_mae, title, output_path):
+def plot_curve(train_sizes_abs, train_r2, val_r2, title, output_path):
     fig, ax = plt.subplots(figsize=(9, 6))
-    ax.plot(train_sizes_abs, train_mae, marker="o", label="train")
-    ax.plot(train_sizes_abs, val_mae, marker="o", label="val")
+    ax.plot(train_sizes_abs, train_r2, marker="o", label="train")
+    ax.plot(train_sizes_abs, val_r2, marker="o", label="val")
 
     ax.set_title(title)
     ax.set_xlabel("train size")
-    ax.set_ylabel("MAE")
+    ax.set_ylabel("R²")
     ax.grid(alpha=0.25)
     ax.legend()
     fig.tight_layout()
@@ -251,7 +103,7 @@ def plot_curve(train_sizes_abs, train_mae, val_mae, title, output_path):
 
 
 def main():
-    vectorizers = build_vectorizers()
+    vectorizers = build_vectorizers(max_features=2000)
     models = build_models()
 
     img_dir = Path("img")
@@ -278,15 +130,15 @@ def main():
         print(f"\n{i}/{total_jobs}: {vec_name} + {model_name}")
 
         model_info = models[model_name]
+        
         pipeline = build_pipeline(
             vectorizer_factory=vectorizers[vec_name],
-            model_factory=model_info["factory"],
-            requires_dense=model_info["requires_dense"],
-            uses_servings=model_info.get("uses_servings", False),
+            model_info=model_info,
+            is_multioutput=False
         )
 
         job_start = perf_counter()
-        train_sizes_abs, train_mae, val_mae = compute_holdout_curve(
+        train_sizes_abs, train_r2, val_r2 = compute_holdout_curve(
             pipeline=pipeline,
             X_train=X_train,
             y_train=y_train,
@@ -299,22 +151,22 @@ def main():
         out_path = img_dir / out_name
         plot_curve(
             train_sizes_abs=train_sizes_abs,
-            train_mae=train_mae,
-            val_mae=val_mae,
+            train_r2=train_r2,
+            val_r2=val_r2,
             title=f"{vec_name} + {model_name}",
             output_path=out_path,
         )
 
         elapsed = perf_counter() - job_start
-        best_val_mae = float(np.min(val_mae))
-        summary.append((vec_name, model_name, best_val_mae, elapsed, out_path.as_posix()))
-        print(f"Zapisane: {out_path.as_posix()} (best val MAE: {best_val_mae:.4f}, {elapsed:.1f}s)")
+        best_val_r2 = float(np.max(val_r2)) 
+        summary.append((vec_name, model_name, best_val_r2, elapsed, out_path.as_posix()))
+        print(f"Zapisane: {out_path.as_posix()} (best val R²: {best_val_r2:.4f}, {elapsed:.1f}s)")
 
     print("\nPodsumowanie:")
-    for vec_name, model_name, mae, elapsed, out_path in sorted(summary, key=lambda x: x[2]):
+    for vec_name, model_name, r2, elapsed, out_path in sorted(summary, key=lambda x: x[2], reverse=True):
         print(
             f"  {vec_name:14s} + {model_name:14s} | "
-            f"best val MAE={mae:.4f} | czas={elapsed:.1f}s | {out_path}"
+            f"best val R²={r2:.4f} | czas={elapsed:.1f}s | {out_path}"
         )
 
     print(f"\nGotowe. Caly run: {perf_counter() - run_start:.1f}s")
