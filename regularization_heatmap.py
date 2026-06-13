@@ -28,7 +28,7 @@ L2_VALUES = [1e-3, 1e-2, 1e-1, 1.0, 10.0]
 LEARNING_RATE = 0.5
 MAX_ITER = 2000
 OUTPUT_PATH = Path("img/regularization_heatmaps.png")
-
+VERBOSE = False
 
 def load_data():
     rows = load_training_rows(DATA_PATH)[:MAX_TRAIN_ROWS]
@@ -70,9 +70,9 @@ def build_pipeline(l1, l2):
             max_iter=MAX_ITER,
             l1=l1,
             l2=l2,
-            verbose=True,
-            tol=1e-5,
-            patience=50,
+            verbose=VERBOSE,
+            tol=1e-4,
+            patience=30,
         ),
         func=np.log1p,
         inverse_func=np.expm1,

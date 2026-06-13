@@ -16,7 +16,7 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer
+from src.features import ManualTfidfVectorizer, Word2VecVectorizer, MyTfidfVectorizer
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
 from src.tokenize import tokenize
@@ -38,6 +38,7 @@ SELECTED_EXPERIMENTS = [
     ("tfidf", "lgbm_servings"),  
     ("manual_tfidf", "lgbm"),          
     ("manual_tfidf", "lgbm_servings"),  
+    ("my_tfidf", "elasticnet_gd"),
 ]
 
 
@@ -78,7 +79,7 @@ def build_models():
         "elasticnet_gd": {
             "factory": lambda: TransformedTargetRegressor(
                 regressor=ElasticNetGDRegressor(
-                    learning_rate=0.05, 
+                    learning_rate=0.5, 
                     max_iter=2000,   
                     l1=0.001, 
                     l2=0.001,
@@ -144,6 +145,11 @@ def build_vectorizers():
             ngram_range=(1, 2),
             min_df=3,
             max_df=0.9,
+            max_features=TFIDF_MAX_FEATURES,
+        ),
+        "my_tfidf": lambda: MyTfidfVectorizer(
+            min_df=3,
+            max_df=0.8,
             max_features=TFIDF_MAX_FEATURES,
         ),
         "manual_tfidf": lambda: ManualTfidfVectorizer(
