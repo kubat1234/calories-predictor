@@ -28,7 +28,7 @@ EXPERIMENTS = [
     # ("tfidf", "lgbm"),          
     # ("tfidf", "lgbm_servings"),  
     # ("manual_tfidf", "lgbm"),          
-    ("manual_tfidf", "lgbm_servings"),  
+    # ("manual_tfidf", "lgbm_servings"),  
     ("tfidf", "custom_nn"),  
 ]
 

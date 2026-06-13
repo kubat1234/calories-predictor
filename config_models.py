@@ -10,10 +10,11 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer
+from src.features import ManualTfidfVectorizer, Word2VecVectorizer, MyTfidfVectorizer
 from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
 from src.models.CustomAdaBoostRegressor import CustomAdaBoostRegressor
 from src.models.CustomNeuralNetworkRegressor import CustomNeuralNetworkRegressor
+from src.models.DumbRegressor import DumbRegressor
 from src.tokenize import tokenize
 
 from config_constants import RANDOM_SEED, TFIDF_MAX_FEATURES
@@ -38,7 +39,7 @@ def build_models():
                 num_leaves=31,
                 subsample=0.8,
                 colsample_bytree=0.8,
-                n_jobs=35,
+                n_jobs=70,
                 random_state=RANDOM_SEED, 
                 verbose=-1,
             ),
@@ -47,13 +48,21 @@ def build_models():
         )
     return {
         "ridge": {
-            "factory": lambda: Ridge(alpha=1.0),
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=Ridge(alpha=1.0),
+                func=np.log1p,
+                inverse_func=np.expm1,
+            ),
             "requires_dense": False,
             "supports_multioutput": True,
             "uses_servings": False,
         },
         "ridge_servings": {
-            "factory": lambda: Ridge(alpha=1.0),
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=Ridge(alpha=1.0),
+                func=np.log1p,
+                inverse_func=np.expm1,
+            ),
             "requires_dense": False,
             "supports_multioutput": True,
             "uses_servings": True,
@@ -82,6 +91,12 @@ def build_models():
             ),
             "requires_dense": True,
             "supports_multioutput": True,
+            "uses_servings": False,
+        },
+        "dumb": {
+            "factory": lambda: DumbRegressor(),
+            "requires_dense": True,
+            "supports_multioutput": False,
             "uses_servings": False,
         },
         "mlp": {
@@ -128,10 +143,10 @@ def build_models():
             "factory": lambda: TransformedTargetRegressor(
                 regressor=CustomNeuralNetworkRegressor(
                     layer_sizes=[64, 32, 1],  
-                    epochs=20,
-                    learning_rate=0.01,
+                    epochs=60,
+                    learning_rate=0.001,
                     batch_size=64,
-                    random_state=RANDOM_SEED
+                    random_state=RANDOM_SEED,
                 ),
                 func=np.log1p,
                 inverse_func=np.expm1,

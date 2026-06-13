@@ -48,7 +48,7 @@ def print_markdown_table(model_name: str, results: list):
     print("", flush=True)
 
 
-def save_results_to_png(all_results: list, output_filename: str = "results_summary.png"):
+def save_results_to_png(all_results: list, output_filename: str = "results_summary.png", title: str = "Zestawienie wyników modeli"):
     df = pd.DataFrame(all_results)
     if df.empty:
         return
@@ -61,7 +61,10 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
     ax.axis('tight')
     ax.axis('off')
     
-    custom_col_widths = [0.35, 0.15, 0.12, 0.12, 0.12, 0.12]
+    if len(df.columns) == 6:
+        custom_col_widths = [0.35, 0.15, 0.12, 0.12, 0.12, 0.12]
+    else:
+        custom_col_widths = None
 
     table = ax.table(
         cellText=df.values, 
@@ -79,10 +82,10 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
             cell.set_text_props(weight='bold', color='white')
             cell.set_facecolor('#4c72b0')
     
-    plt.title("Zestawienie wyników modeli", pad=20, fontsize=14, weight='bold')
+    plt.title(title, pad=20, fontsize=14, weight='bold')
     plt.savefig(output_filename, bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"\nZapisano zestawienie wyników do pliku: {output_filename}")
+    print(f"Zapisano zestawienie wyników do pliku: {output_filename}")
 
 
 def parse_args():
@@ -125,6 +128,8 @@ def main():
     X_test, y_test = load_test_data()
     print(f"Dane wczytane. Rozmiar zbioru testowego: {len(X_test):,} próbek.\n")
 
+    stats_dir = Path("img/stats")
+
     all_results = []
 
     for path in models_to_test:
@@ -163,12 +168,23 @@ def main():
                 all_results.append(metric_row)
 
             print_markdown_table(model_name, model_metrics)
+            
+            individual_output_path = stats_dir / f"{model_name}.png"
+            save_results_to_png(
+                model_metrics, 
+                output_filename=str(individual_output_path), 
+                title=f"Wyniki modelu: {model_name}"
+            )
 
         except Exception as e:
             print(f"Błąd podczas testowania {model_name}: {e}\n")
 
     if all_results:
-        save_results_to_png(all_results)
+        save_results_to_png(
+            all_results, 
+            output_filename="results_summary.png", 
+            title="Zbiorcze zestawienie wyników modeli"
+        )
 
 
 if __name__ == "__main__":

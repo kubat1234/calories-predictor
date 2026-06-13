@@ -3,7 +3,8 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_random_state 
 
 class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
-    def __init__(self, layer_sizes, epochs=5, learning_rate=0.001, batch_size=64, print_every=1, random_state=None):
+    def __init__(self, layer_sizes, epochs=5, learning_rate=0.001, batch_size=64, print_every=1, random_state=None,
+                 beta1=0.9, beta2=0.999, epsilon=1e-8):
         self.layer_sizes = layer_sizes
         self.epochs = epochs
         self.learning_rate = learning_rate
@@ -11,12 +12,22 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
         self.print_every = print_every
         self.random_state = random_state 
         
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        
         self.weights = []
         self.biases = []
 
     def _initialize_parameters(self):
         self.weights = []
         self.biases = []
+        
+        self.m_weights = []
+        self.v_weights = []
+        self.m_biases = []
+        self.v_biases = []
+        
         for i in range(len(self.full_layer_sizes_) - 1):
             in_dim = self.full_layer_sizes_[i]
             out_dim = self.full_layer_sizes_[i + 1]
@@ -26,6 +37,11 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
             
             self.weights.append(W)
             self.biases.append(B)
+            
+            self.m_weights.append(np.zeros_like(W))
+            self.v_weights.append(np.zeros_like(W))
+            self.m_biases.append(np.zeros_like(B))
+            self.v_biases.append(np.zeros_like(B))
 
     def _relu(self, preactivation):
         return preactivation.clip(0.0)
@@ -78,18 +94,17 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
         Y = np.asarray(Y)
         
         self.rng_ = check_random_state(self.random_state)
-    
         input_dim = X.shape[1]
-        
         self.full_layer_sizes_ = [input_dim] + list(self.layer_sizes)
         
         self._initialize_parameters()
         n_samples = len(X)
-        
         total_batches = int(np.ceil(n_samples / self.batch_size))
         
         print(f"Rozpoczęcie trenowania (architektura: {self.full_layer_sizes_}, batch_size: {self.batch_size})...")
         print(f"Liczba próbek: {n_samples} | Liczba batchy na epokę: {total_batches}\n")
+        
+        t = 0
         
         for epoch in range(self.epochs):
             indices = np.arange(n_samples)
@@ -114,14 +129,26 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
                 
                 all_dl_dweights, all_dl_dbiases = self._backward_pass(all_f, all_h, y)
                 
-                clip_val = 1.0
+                t += 1 
                 for layer in range(len(self.weights)):
-                    all_dl_dweights[layer] = np.clip(all_dl_dweights[layer], -clip_val, clip_val)
-                    all_dl_dbiases[layer] = np.clip(all_dl_dbiases[layer], -clip_val, clip_val)
-                
-                for layer in range(len(self.weights)):
-                    self.weights[layer] -= self.learning_rate * all_dl_dweights[layer]
-                    self.biases[layer] -= self.learning_rate * all_dl_dbiases[layer]
+                    g_w = all_dl_dweights[layer]
+                    g_b = all_dl_dbiases[layer]
+                    
+                    self.m_weights[layer] = self.beta1 * self.m_weights[layer] + (1 - self.beta1) * g_w
+                    self.v_weights[layer] = self.beta2 * self.v_weights[layer] + (1 - self.beta2) * (g_w ** 2)
+                    
+                    m_hat_w = self.m_weights[layer] / (1 - self.beta1 ** t)
+                    v_hat_w = self.v_weights[layer] / (1 - self.beta2 ** t)
+                    
+                    self.weights[layer] -= self.learning_rate * m_hat_w / (np.sqrt(v_hat_w) + self.epsilon)
+                    
+                    self.m_biases[layer] = self.beta1 * self.m_biases[layer] + (1 - self.beta1) * g_b
+                    self.v_biases[layer] = self.beta2 * self.v_biases[layer] + (1 - self.beta2) * (g_b ** 2)
+                    
+                    m_hat_b = self.m_biases[layer] / (1 - self.beta1 ** t)
+                    v_hat_b = self.v_biases[layer] / (1 - self.beta2 ** t)
+                    
+                    self.biases[layer] -= self.learning_rate * m_hat_b / (np.sqrt(v_hat_b) + self.epsilon)
 
                 if epoch % self.print_every == 0:
                     print(f"\rEpoka {epoch}: Przetwarzanie batcha {num_batches}/{total_batches}", end="", flush=True)

@@ -18,17 +18,15 @@ from config_constants import (
 )
 
 SELECTED_EXPERIMENTS = [
-    # ("tfidf", "custom_adaboost"),
-    # ("tfidf", "ridge_servings"),
-    # ("manual_tfidf", "ridge_servings"),
-    # ("tfidf", "elasticnet_gd"),
-    # ("manual_tfidf", "elasticnet_gd"),
-    # ("tfidf", "random_forest"),
-    # ("tfidf", "lgbm"),          
-    # ("tfidf", "lgbm_servings"),  
-    # ("manual_tfidf", "lgbm"),          
-    # ("manual_tfidf", "lgbm_servings"),  
+    # ("my_tfidf", "ridge_servings"),
+    # ("my_tfidf", "ridge"),
+    # ("my_tfidf", "elasticnet_gd"),
+    # ("my_tfidf", "random_forest"),
+    # ("my_tfidf", "lgbm"),          
+    # ("my_tfidf", "lgbm_servings"),   
     ("tfidf", "custom_nn"),  
+    ("my_tfidf", "custom_nn"),  
+    ("my_tfidf", "custom_adaboost"),
 
 
     

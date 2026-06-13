@@ -1,3 +1,6 @@
 vectorizer,model,max_features,r2_score
-manual_tfidf,lgbm_servings,10,0.183624
-manual_tfidf,lgbm_servings,50,0.244806
+tfidf,custom_nn,10,-0.046710
+tfidf,custom_nn,50,0.064869
+tfidf,custom_nn,100,0.087897
+tfidf,custom_nn,300,0.032771
+tfidf,custom_nn,600,-0.242361
