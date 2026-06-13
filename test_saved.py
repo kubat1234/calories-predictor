@@ -9,7 +9,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
-from config import (
+from config_constants import (
     MAX_TRAIN_ROWS,
     MAX_TEST_ROWS,
     PERCENTILE_FILTER,

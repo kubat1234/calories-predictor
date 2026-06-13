@@ -2,202 +2,31 @@ import argparse
 from pathlib import Path
 from time import perf_counter
 
-import lightgbm as lgb
 import joblib
 import numpy as np
 import pandas as pd
-import scipy.sparse as sp
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.linear_model import Ridge
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import Pipeline
 
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer, MyTfidfVectorizer
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
-from src.tokenize import tokenize
+from config_models import build_models, build_vectorizers, build_pipeline
 
-from config import (
-    RANDOM_SEED,
+from config_constants import (
     MAX_TRAIN_ROWS,
     PERCENTILE_FILTER,
     TARGET_NAMES,
-    TFIDF_MAX_FEATURES,
     DATA_PATH,
     MODELS_DIR
 )
 
 SELECTED_EXPERIMENTS = [
-    ("tfidf", "ridge"),
-    ("tfidf", "random_forest"),
-    ("tfidf", "lgbm"),          
-    ("tfidf", "lgbm_servings"),  
-    ("manual_tfidf", "lgbm"),          
-    ("manual_tfidf", "lgbm_servings"),  
-    ("my_tfidf", "elasticnet_gd"),
+    ("tfidf", "custom_adaboost"),
+    # ("tfidf", "ridge"),
+    # ("manual_tfidf", "ridge"),
+    # ("tfidf", "random_forest"),
+    # ("tfidf", "lgbm"),          
+    # ("tfidf", "lgbm_servings"),  
+    # ("manual_tfidf", "lgbm"),          
+    # ("manual_tfidf", "lgbm_servings"),  
 ]
-
-
-class ToDenseTransformer(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        if sp.issparse(X):
-            return X.toarray()
-        return np.asarray(X)
-
-
-def build_models():
-    def make_lgbm():
-        return TransformedTargetRegressor(
-            regressor=lgb.LGBMRegressor(
-                n_estimators=1000,
-                learning_rate=0.05,
-                num_leaves=31,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                n_jobs=-1,
-                random_state=RANDOM_SEED, 
-                verbose=-1,
-            ),
-            func=np.log1p,
-            inverse_func=np.expm1,
-        )
-
-    return {
-        "ridge": {
-            "factory": lambda: Ridge(alpha=1.0),
-            "requires_dense": False,
-            "supports_multioutput": True,
-            "uses_servings": False,
-        },
-        "elasticnet_gd": {
-            "factory": lambda: TransformedTargetRegressor(
-                regressor=ElasticNetGDRegressor(
-                    learning_rate=0.5, 
-                    max_iter=2000,   
-                    l1=0.001, 
-                    l2=0.001,
-                ),
-                func=np.log1p,
-                inverse_func=np.expm1,
-            ),
-            "requires_dense": False,
-            "supports_multioutput": False,
-            "uses_servings": False,
-        },
-        "random_forest": {
-            "factory": lambda: RandomForestRegressor(
-                n_estimators=10,
-                max_depth=15,
-                random_state=RANDOM_SEED,
-                n_jobs=-1,
-            ),
-            "requires_dense": True,
-            "supports_multioutput": True,
-            "uses_servings": False,
-        },
-        "mlp": {
-            "factory": lambda: MLPRegressor(
-                hidden_layer_sizes=(100,),
-                activation="relu",
-                solver="adam",
-                max_iter=200,
-                random_state=RANDOM_SEED, 
-            ),
-            "requires_dense": True,
-            "supports_multioutput": True,
-            "uses_servings": False,
-        },
-        "lgbm": {
-            "factory": make_lgbm,
-            "requires_dense": False,
-            "supports_multioutput": False, 
-            "uses_servings": False,
-        },
-        "lgbm_servings": {
-            "factory": make_lgbm,
-            "requires_dense": False,
-            "supports_multioutput": False,
-            "uses_servings": True,
-        },
-    }
-
-
-def build_vectorizers():
-    return {
-        "count": lambda: CountVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=TFIDF_MAX_FEATURES,
-        ),
-        "tfidf": lambda: TfidfVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=TFIDF_MAX_FEATURES,
-        ),
-        "my_tfidf": lambda: MyTfidfVectorizer(
-            min_df=3,
-            max_df=0.8,
-            max_features=TFIDF_MAX_FEATURES,
-        ),
-        "manual_tfidf": lambda: ManualTfidfVectorizer(
-            tokenizer=tokenize,
-            token_pattern=None,
-            ngram_range=(1, 2),
-            min_df=3,
-            max_df=0.9,
-            max_features=TFIDF_MAX_FEATURES,
-        ),
-        "word2vec": lambda: Word2VecVectorizer(
-            vector_size=64,
-            window=5,
-            min_count=2,
-            epochs=5,
-        ),
-    }
-
-
-def build_pipeline(vectorizer_factory, model_factory, requires_dense, supports_multioutput, uses_servings):
-    model = model_factory()
-    if not supports_multioutput:
-        model = MultiOutputRegressor(model)
-
-    if uses_servings:
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ('text', vectorizer_factory(), 'instructions'),
-                ('num', 'passthrough', ['servings'])
-            ]
-        )
-    else:
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ('text', vectorizer_factory(), 'instructions')
-            ],
-            remainder='drop'
-        )
-
-    steps = [("preprocessor", preprocessor)]
-    
-    if requires_dense:
-        steps.append(("to_dense", ToDenseTransformer()))
-        
-    steps.append(("model", model))
-    
-    return Pipeline(steps)
-
 
 def load_data():
     rows = load_training_rows(DATA_PATH)[:MAX_TRAIN_ROWS]
@@ -234,6 +63,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    
     vectorizers = build_vectorizers()
     models = build_models()
 
@@ -263,12 +93,11 @@ def main():
         start = perf_counter()
 
         model_info = models[model_name]
+        
         pipeline = build_pipeline(
             vectorizer_factory=vectorizers[vectorizer_name],
-            model_factory=model_info["factory"],
-            requires_dense=model_info["requires_dense"],
-            supports_multioutput=model_info["supports_multioutput"],
-            uses_servings=model_info.get("uses_servings", False),
+            model_info=model_info,
+            is_multioutput=True
         )
         
         print("  1. Wektoryzacja danych...")
