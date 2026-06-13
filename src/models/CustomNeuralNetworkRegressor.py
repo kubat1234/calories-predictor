@@ -17,9 +17,9 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
     def _initialize_parameters(self):
         self.weights = []
         self.biases = []
-        for i in range(len(self.layer_sizes) - 1):
-            in_dim = self.layer_sizes[i]
-            out_dim = self.layer_sizes[i + 1]
+        for i in range(len(self.full_layer_sizes_) - 1):
+            in_dim = self.full_layer_sizes_[i]
+            out_dim = self.full_layer_sizes_[i + 1]
             
             W = self.rng_.normal(0, np.sqrt(2.0 / in_dim), size=(out_dim, in_dim))
             B = np.zeros((out_dim, 1))
@@ -78,13 +78,17 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
         Y = np.asarray(Y)
         
         self.rng_ = check_random_state(self.random_state)
+    
+        input_dim = X.shape[1]
+        
+        self.full_layer_sizes_ = [input_dim] + list(self.layer_sizes)
         
         self._initialize_parameters()
         n_samples = len(X)
         
         total_batches = int(np.ceil(n_samples / self.batch_size))
         
-        print(f"Rozpoczęcie trenowania (architektura: {self.layer_sizes}, batch_size: {self.batch_size})...")
+        print(f"Rozpoczęcie trenowania (architektura: {self.full_layer_sizes_}, batch_size: {self.batch_size})...")
         print(f"Liczba próbek: {n_samples} | Liczba batchy na epokę: {total_batches}\n")
         
         for epoch in range(self.epochs):

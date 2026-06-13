@@ -1,0 +1,43 @@
+Wczytywanie i filtrowanie danych testowych...
+Dane wczytane. Rozmiar zbioru testowego: 76,218 próbek.
+
+--> Testowanie modelu: tfidf_custom_adaboost ...
+
+Wyniki dla modelu: **tfidf_custom_adaboost**
+| Target | MAE | MSE | RMSE | R2 |
+|---|---|---|---|---|
+| calories | 182.3186 | 60998.9855 | 246.9797 | -0.5032 |
+| fat | 9.4396 | 199.8353 | 14.1363 | -0.0466 |
+| carbohydrates | 18.0774 | 668.0060 | 25.8458 | -0.2293 |
+| protein | 8.7479 | 178.9432 | 13.3770 | 0.0354 |
+
+--> Testowanie modelu: manual_tfidf_ridge ...
+
+Wyniki dla modelu: **manual_tfidf_ridge**
+| Target | MAE | MSE | RMSE | R2 |
+|---|---|---|---|---|
+| calories | 127.1177 | 27677.1993 | 166.3647 | 0.3179 |
+| fat | 8.2781 | 129.1857 | 11.3660 | 0.3234 |
+| carbohydrates | 14.8208 | 386.2403 | 19.6530 | 0.2892 |
+| protein | 6.4757 | 86.2573 | 9.2875 | 0.5350 |
+
+--> Testowanie modelu: tfidf_lgbm_servings ...
+
+Wyniki dla modelu: **tfidf_lgbm_servings**
+| Target | MAE | MSE | RMSE | R2 |
+|---|---|---|---|---|
+| calories | 113.4110 | 25151.0238 | 158.5907 | 0.3802 |
+| fat | 7.3162 | 124.8877 | 11.1753 | 0.3460 |
+| carbohydrates | 13.2034 | 367.7557 | 19.1770 | 0.3232 |
+| protein | 5.7343 | 85.5546 | 9.2496 | 0.5388 |
+
+--> Testowanie modelu: tfidf_elasticnet_gd ...
+
+Wyniki dla modelu: **tfidf_elasticnet_gd**
+| Target | MAE | MSE | RMSE | R2 |
+|---|---|---|---|---|
+| calories | 128.2284 | 31082.5732 | 176.3025 | 0.2340 |
+| fat | 8.1978 | 150.3053 | 12.2599 | 0.2128 |
+| carbohydrates | 14.9580 | 452.0549 | 21.2616 | 0.1681 |
+| protein | 6.7004 | 109.4513 | 10.4619 | 0.4100 |
+

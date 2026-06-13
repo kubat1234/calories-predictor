@@ -57,13 +57,16 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
         if col in df.columns:
             df[col] = df[col].apply(lambda x: f"{x:.3f}")
     
-    fig, ax = plt.subplots(figsize=(10, 1 + len(df) * 0.3))
+    fig, ax = plt.subplots(figsize=(12, 1 + len(df) * 0.3))
     ax.axis('tight')
     ax.axis('off')
     
+    custom_col_widths = [0.35, 0.15, 0.12, 0.12, 0.12, 0.12]
+
     table = ax.table(
         cellText=df.values, 
-        colLabels=df.columns, 
+        colLabels=df.columns,
+        colWidths=custom_col_widths,
         loc='center', 
         cellLoc='center'
     )

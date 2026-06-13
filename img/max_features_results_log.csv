@@ -1,0 +1,3 @@
+vectorizer,model,max_features,r2_score
+manual_tfidf,lgbm_servings,10,0.183624
+manual_tfidf,lgbm_servings,50,0.244806

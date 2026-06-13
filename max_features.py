@@ -20,12 +20,16 @@ TARGET_NAME = "calories"
 MAX_FEATURES_VALUES = [10, 50, 100, 300, 600, 1000, 1500, 2000, 4000]
 
 EXPERIMENTS = [
-    ("tfidf", "ridge"),
-    ("tfidf", "random_forest"),
-    ("tfidf", "lgbm"),          
-    ("tfidf", "lgbm_servings"),  
-    ("manual_tfidf", "lgbm"),          
+    # ("tfidf", "ridge"),
+    # ("manual_tfidf", "ridge"),
+    # ("tfidf", "elasticnet_gd"),
+    # ("manual_tfidf", "elasticnet_gd"),
+    # ("tfidf", "random_forest"),
+    # ("tfidf", "lgbm"),          
+    # ("tfidf", "lgbm_servings"),  
+    # ("manual_tfidf", "lgbm"),          
     ("manual_tfidf", "lgbm_servings"),  
+    ("tfidf", "custom_nn"),  
 ]
 
 
