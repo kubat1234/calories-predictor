@@ -178,6 +178,11 @@ def build_vectorizers(max_features=None):
             min_count=2,
             epochs=5,
         ),
+        "my_tfidf": lambda: MyTfidfVectorizer(
+            min_df=3,
+            max_df=0.8,
+            max_features=max_features,
+        ),
     }
 
 
