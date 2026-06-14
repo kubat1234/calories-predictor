@@ -1,43 +1,255 @@
 Wczytywanie i filtrowanie danych testowych...
-Dane wczytane. Rozmiar zbioru testowego: 76,218 próbek.
+Dane wczytane. Rozmiar zbioru testowego: 76,212 próbek.
 
---> Testowanie modelu: tfidf_custom_adaboost ...
+--> Testowanie modelu: my_tfidf_lgbm_servings ...
 
-Wyniki dla modelu: **tfidf_custom_adaboost**
-| Target | MAE | MSE | RMSE | R2 |
-|---|---|---|---|---|
-| calories | 182.3186 | 60998.9855 | 246.9797 | -0.5032 |
-| fat | 9.4396 | 199.8353 | 14.1363 | -0.0466 |
-| carbohydrates | 18.0774 | 668.0060 | 25.8458 | -0.2293 |
-| protein | 8.7479 | 178.9432 | 13.3770 | 0.0354 |
+Wyniki dla modelu: **my_tfidf_lgbm_servings**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 110.1113 | 154.1167 | 0.4110 |
+| fat | 7.1345 | 10.9113 | 0.3730 |
+| carbohydrates | 12.7409 | 18.5175 | 0.3631 |
+| protein | 5.6205 | 9.1044 | 0.5535 |
 
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_lgbm_servings.png
 --> Testowanie modelu: manual_tfidf_ridge ...
 
 Wyniki dla modelu: **manual_tfidf_ridge**
-| Target | MAE | MSE | RMSE | R2 |
-|---|---|---|---|---|
-| calories | 127.1177 | 27677.1993 | 166.3647 | 0.3179 |
-| fat | 8.2781 | 129.1857 | 11.3660 | 0.3234 |
-| carbohydrates | 14.8208 | 386.2403 | 19.6530 | 0.2892 |
-| protein | 6.4757 | 86.2573 | 9.2875 | 0.5350 |
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 126.3428 | 165.3946 | 0.3216 |
+| fat | 8.2270 | 11.2847 | 0.3293 |
+| carbohydrates | 14.6997 | 19.4149 | 0.2999 |
+| protein | 6.4725 | 9.2828 | 0.5359 |
 
+Zapisano zestawienie wyników do pliku: img/stats/manual_tfidf_ridge.png
 --> Testowanie modelu: tfidf_lgbm_servings ...
 
 Wyniki dla modelu: **tfidf_lgbm_servings**
-| Target | MAE | MSE | RMSE | R2 |
-|---|---|---|---|---|
-| calories | 113.4110 | 25151.0238 | 158.5907 | 0.3802 |
-| fat | 7.3162 | 124.8877 | 11.1753 | 0.3460 |
-| carbohydrates | 13.2034 | 367.7557 | 19.1770 | 0.3232 |
-| protein | 5.7343 | 85.5546 | 9.2496 | 0.5388 |
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 109.6304 | 154.1179 | 0.4110 |
+| fat | 7.0904 | 10.8942 | 0.3749 |
+| carbohydrates | 12.7744 | 18.5702 | 0.3595 |
+| protein | 5.5274 | 8.9664 | 0.5670 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_lgbm_servings.png
+--> Testowanie modelu: tfidf_elasticnet_gd ...
+
+Wyniki dla modelu: **tfidf_elasticnet_gd**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 127.4522 | 175.1836 | 0.2389 |
+| fat | 8.1535 | 12.1882 | 0.2176 |
+| carbohydrates | 14.8475 | 21.0441 | 0.1775 |
+| protein | 6.6737 | 10.4420 | 0.4127 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_elasticnet_gd.png
+--> Testowanie modelu: manual_tfidf_elasticnet_gd ...
+Błąd podczas testowania manual_tfidf_elasticnet_gd: Input contains infinity or a value too large for dtype('float64').
+
+--> Testowanie modelu: my_tfidf_lgbm ...
+
+Wyniki dla modelu: **my_tfidf_lgbm**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 121.0453 | 167.2914 | 0.3060 |
+| fat | 7.5707 | 11.4507 | 0.3094 |
+| carbohydrates | 13.7071 | 19.7230 | 0.2775 |
+| protein | 6.0216 | 9.5149 | 0.5124 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_lgbm.png
+--> Testowanie modelu: my_tfidf_random_forest ...
+
+Wyniki dla modelu: **my_tfidf_random_forest**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 135.3107 | 175.6555 | 0.2348 |
+| fat | 9.0654 | 12.2303 | 0.2122 |
+| carbohydrates | 16.8013 | 21.5024 | 0.1412 |
+| protein | 7.6736 | 10.6459 | 0.3896 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_random_forest.png
+--> Testowanie modelu: tfidf_lgbm ...
+
+Wyniki dla modelu: **tfidf_lgbm**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 119.8780 | 166.3613 | 0.3136 |
+| fat | 7.4900 | 11.3916 | 0.3165 |
+| carbohydrates | 13.6645 | 19.6976 | 0.2794 |
+| protein | 5.9275 | 9.3952 | 0.5246 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_lgbm.png
+--> Testowanie modelu: my_tfidf_custom_nn2 ...
+
+Wyniki dla modelu: **my_tfidf_custom_nn2**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 124.3788 | 169.3151 | 0.2891 |
+| fat | 7.7190 | 11.7006 | 0.2790 |
+| carbohydrates | 13.8272 | 19.6410 | 0.2835 |
+| protein | 5.9716 | 9.3362 | 0.5305 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_custom_nn2.png
+--> Testowanie modelu: my_tfidf_ridge_servings ...
+
+Wyniki dla modelu: **my_tfidf_ridge_servings**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 123.4177 | 170.0616 | 0.2828 |
+| fat | 7.9818 | 11.9452 | 0.2485 |
+| carbohydrates | 14.4818 | 20.6923 | 0.2047 |
+| protein | 6.5378 | 10.3762 | 0.4201 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_ridge_servings.png
+--> Testowanie modelu: tfidf_random_forest ...
+Błąd podczas testowania tfidf_random_forest: Can't get attribute 'ToDenseTransformer' on <module '__main__' from '/home/z1203964/calories-predictor/test_saved.py'>
+
+--> Testowanie modelu: manual_tfidf_lgbm ...
+
+Wyniki dla modelu: **manual_tfidf_lgbm**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 119.7245 | 165.9573 | 0.3170 |
+| fat | 7.4820 | 11.3637 | 0.3199 |
+| carbohydrates | 13.6429 | 19.6704 | 0.2813 |
+| protein | 5.9584 | 9.4815 | 0.5158 |
+
+Zapisano zestawienie wyników do pliku: img/stats/manual_tfidf_lgbm.png
+--> Testowanie modelu: my_tfidf_ridge ...
+
+Wyniki dla modelu: **my_tfidf_ridge**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 125.6584 | 172.5919 | 0.2613 |
+| fat | 8.0478 | 12.0190 | 0.2392 |
+| carbohydrates | 14.6489 | 20.8933 | 0.1892 |
+| protein | 6.5965 | 10.4441 | 0.4125 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_ridge.png
+--> Testowanie modelu: manual_tfidf_lgbm_servings ...
+
+Wyniki dla modelu: **manual_tfidf_lgbm_servings**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 107.9442 | 151.9085 | 0.4277 |
+| fat | 7.0051 | 10.7793 | 0.3880 |
+| carbohydrates | 12.6057 | 18.3497 | 0.3746 |
+| protein | 5.4392 | 8.8357 | 0.5795 |
+
+Zapisano zestawienie wyników do pliku: img/stats/manual_tfidf_lgbm_servings.png
+--> Testowanie modelu: tfidf_custom_nn2 ...
+
+Wyniki dla modelu: **tfidf_custom_nn2**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 125.9037 | 171.9063 | 0.2671 |
+| fat | 7.8166 | 11.7985 | 0.2668 |
+| carbohydrates | 14.1213 | 19.7651 | 0.2744 |
+| protein | 6.0632 | 9.4729 | 0.5167 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_custom_nn2.png
+--> Testowanie modelu: tfidf_dumb ...
+
+Wyniki dla modelu: **tfidf_dumb**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 159.7719 | 200.8364 | -0.0003 |
+| fat | 10.6669 | 13.7802 | -0.0001 |
+| carbohydrates | 18.5163 | 23.2062 | -0.0002 |
+| protein | 11.1772 | 13.6267 | -0.0001 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_dumb.png
+--> Testowanie modelu: my_tfidf_elasticnet_gd ...
+
+Wyniki dla modelu: **my_tfidf_elasticnet_gd**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 126.9358 | 174.5983 | 0.2440 |
+| fat | 8.1187 | 12.1393 | 0.2239 |
+| carbohydrates | 14.7201 | 20.9465 | 0.1851 |
+| protein | 6.6284 | 10.4218 | 0.4150 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_elasticnet_gd.png
+--> Testowanie modelu: tfidf_custom_adaboost2 ...
+
+Wyniki dla modelu: **tfidf_custom_adaboost2**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 181.3869 | 245.8338 | -0.4987 |
+| fat | 9.3892 | 14.0548 | -0.0404 |
+| carbohydrates | 17.9814 | 25.6463 | -0.2216 |
+| protein | 8.6916 | 13.3381 | 0.0418 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_custom_adaboost2.png
+--> Testowanie modelu: tfidf_ridge_servings ...
+
+Wyniki dla modelu: **tfidf_ridge_servings**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 121.7973 | 168.5693 | 0.2953 |
+| fat | 7.9298 | 11.9188 | 0.2518 |
+| carbohydrates | 14.4632 | 20.6351 | 0.2091 |
+| protein | 6.4794 | 10.2920 | 0.4295 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_ridge_servings.png
+--> Testowanie modelu: tfidf_ridge ...
+
+Wyniki dla modelu: **tfidf_ridge**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 126.4293 | 165.8800 | 0.3176 |
+| fat | 8.2381 | 11.3100 | 0.3263 |
+| carbohydrates | 14.6567 | 19.4547 | 0.2970 |
+| protein | 6.4765 | 9.2871 | 0.5354 |
+
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_ridge.png
+--> Testowanie modelu: manual_tfidf_ridge_servings ...
+
+Wyniki dla modelu: **manual_tfidf_ridge_servings**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 121.6869 | 168.6380 | 0.2947 |
+| fat | 7.9349 | 11.9483 | 0.2481 |
+| carbohydrates | 14.4650 | 20.6660 | 0.2068 |
+| protein | 6.4873 | 10.3113 | 0.4273 |
+
+Zapisano zestawienie wyników do pliku: img/stats/manual_tfidf_ridge_servings.png
+Zapisano zestawienie wyników do pliku: results_summary.png
+Wczytywanie i filtrowanie danych testowych...
+Dane wczytane. Rozmiar zbioru testowego: 76,212 próbek.
+
+--> Testowanie modelu: manual_tfidf_elasticnet_gd ...
+Błąd podczas testowania manual_tfidf_elasticnet_gd: Input contains infinity or a value too large for dtype('float64').
+
+Wczytywanie i filtrowanie danych testowych...
+Dane wczytane. Rozmiar zbioru testowego: 76,212 próbek.
 
 --> Testowanie modelu: tfidf_elasticnet_gd ...
 
 Wyniki dla modelu: **tfidf_elasticnet_gd**
-| Target | MAE | MSE | RMSE | R2 |
-|---|---|---|---|---|
-| calories | 128.2284 | 31082.5732 | 176.3025 | 0.2340 |
-| fat | 8.1978 | 150.3053 | 12.2599 | 0.2128 |
-| carbohydrates | 14.9580 | 452.0549 | 21.2616 | 0.1681 |
-| protein | 6.7004 | 109.4513 | 10.4619 | 0.4100 |
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 136.2399 | 185.8963 | 0.1430 |
+| fat | 8.8533 | 13.1444 | 0.0900 |
+| carbohydrates | 16.0953 | 22.4715 | 0.0621 |
+| protein | 7.3655 | 11.2349 | 0.3202 |
 
+Zapisano zestawienie wyników do pliku: img/stats/tfidf_elasticnet_gd.png
+Zapisano zestawienie wyników do pliku: results_summary.png
+Wczytywanie i filtrowanie danych testowych...
+Dane wczytane. Rozmiar zbioru testowego: 76,212 próbek.
+
+--> Testowanie modelu: my_tfidf_elasticnet_gd ...
+
+Wyniki dla modelu: **my_tfidf_elasticnet_gd**
+| Target | MAE | RMSE | R2 |
+|---|---|---|---|
+| calories | 136.2165 | 185.9908 | 0.1421 |
+| fat | 8.8194 | 13.1062 | 0.0953 |
+| carbohydrates | 15.9785 | 22.3536 | 0.0719 |
+| protein | 7.3122 | 11.2036 | 0.3239 |
+
+Zapisano zestawienie wyników do pliku: img/stats/my_tfidf_elasticnet_gd.png
+Zapisano zestawienie wyników do pliku: results_summary.png

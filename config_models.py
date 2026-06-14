@@ -72,8 +72,8 @@ def build_models():
                 regressor=ElasticNetGDRegressor(
                     learning_rate=0.1, 
                     max_iter=1000,   
-                    l1=0.4, 
-                    l2=0.15,
+                    l1=0.01, 
+                    l2=0.01,
                 ),
                 func=np.log1p,
                 inverse_func=np.expm1,
