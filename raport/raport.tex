@@ -31,7 +31,162 @@ W naszych modelach jako cechy (argumenty wejściowe) rozważamy przede wszystkim
 Z uwagi na specyfikę problemu, gdzie dla modelu sformułowania typu „5g masła” oraz „100g masła” będą zinterpretowane dokładnie tak samo, nie spodziewamy się ekstremalnie wysokich wyników metryk jakościowych. Można jednak założyć, że część istotnych informacji uda się wywnioskować, ponieważ przepisy zamieszczane w Internecie są na ogół przygotowywane dla skończonej i powtarzalnej liczby osób (najczęściej 2--4). Z tego względu rozbieżność w rzeczywistych masach składników nie powinna być drastycznie wielka.
 
 \section*{Analiza danych}
-W tej sekcji przedstawiono wstępną analizę struktury oraz statystyk opisowych zbioru danych. Analizie poddano przede wszystkim rozkłady zmiennych objaśnianych (kalorii oraz poszczególnych makroskładników) pod kątem występowania wartości odstających, a także zbadano korelację między długością instrukcji przygotowania a złożonością odżywczą potraw. Dokonano również oczyszczenia tekstu poprzez usunięcie znaków interpunkcyjnych, konwersję na małe litery oraz eliminację tokenów numerycznych.
+W pliku \texttt{src/analyze\_data.py} przeprowadzamy analize danych. Nasz dataset składał się z wielu kolumn, my skupiliśmy się na przewidywaniu kalorii, węglowodanów, białka i tłuszczu na podstawie tekstowych instrukcji oraz liczby porcji (tylko niektóre modele). \\
+
+\noindent Przykładowy wiersz z datasetu: \\
+
+\begingroup
+\small\ttfamily\noindent
+Porcje: 4\quad Kalorie: 203.90 kcal\quad Tłuszcz: 7.30g\quad Węglowodany: 31.90g\quad Białko: 2.50g
+
+\medskip
+\noindent
+Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into a large pan.", "Add cherry liqueur and bring to a boil, stirring constantly.", "Scoop ice cream into sundae dishes.", "Top with hot cherries.")
+\endgroup \\
+
+\noindent Przy wczytywaniu danych pomijałem te które mają \texttt{NA} (brak danych) w conajmniej jednej z kolumn oraz te, które mają 0 we wszystkich kolumnach z wartościami liczbowymi (te wiersze wydawały się być wierszami z brakującymi danymi, ponieważ przepisy wyglądały normalnie).\\
+
+\begin{table}[htbp]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|l|r|r|r|r|}
+        \hline
+        \textbf{Statystyka} & \textbf{Kalorie (kcal)} & \textbf{Tłuszcz (g)} & \textbf{Węglowodany (g)} & \textbf{Białko (g)} \\ \hline
+        \textbf{Max} & 434 360.20 & 4 701.10 & 108 294.60 & 4 437.20 \\ \hline
+        \textbf{98 perc.} & 1 209.63 & 77.80 & 118.00 & 63.80 \\ \hline
+        \textbf{Średnia} & 371.82 & 18.76 & 34.99 & 15.96 \\ \hline
+        \textbf{Mediana} & 291.20 & 12.70 & 25.90 & 8.90 \\ \hline
+        \textbf{Odch. std.} & 878.20 & 31.94 & 193.74 & 24.61 \\ \hline
+    \end{tabular}
+    \caption{Statystyki opisowe wartości odżywczych (N = 337 685, śr. dł. instrukcji: 592.53 znaków)}
+    \label{tab:statystyki_odzywcze_pion}
+\end{table}
+
+\noindent W datasecie występują wartości odstające, które mogą znacząco wpłynąć na wyniki analizy. W związku z tym zdecydowaliśmy się na obcięcie wartości do 98. percentyla. Poniżej znajdują się wykresy rozkładu dla każdej z analizowanych cech po obcięciu wartości odstających. Wykresy mają rozkłady skośne (im większe wartości, tym mniej danych), więc po prawej znajdują wykresy po zlogarytmowaniu, które przypominają rozkład normalny, co jest korzystne dla wielu modeli.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../img/calories_98.png}
+    \caption{Rozkład kalorii w zbiorze danych.}
+    \label{fig:calories_98}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../img/fat_98.png}
+    \caption{Rozkład tłuszczu w zbiorze danych.}
+    \label{fig:fat_98}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../img/carbohydrates_98.png}
+    \caption{Rozkład węglowodanów w zbiorze danych.}
+    \label{fig:carbohydrates_98}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../img/protein_98.png}
+    \caption{Rozkład białka w zbiorze danych.}
+    \label{fig:protein_98}
+\end{figure}
+
+\section*{Ekstrakcja cech}
+
+\noindent W plikach w \texttt{src/get\_data.py}, \texttt{src/features.py} oraz \texttt{src/features.py} wczytujemy dane, tokenizujemy tekst i wektoryzujemy.
+
+\subsection*{Tokenizacja}
+
+\noindent Z tekstu usuwamy interpunkcję, liczby i znaki specjalne, a następnie dzielimy tekst na słowa. \\
+
+\subsection*{Wektoryzacja}
+
+\noindent Testujemy różne metody wektoryzacji:
+
+\begin{itemize}
+    \item Zwykłe zliczanie słów (Count Vectorizer) \\
+        Polega na zliczaniu wystąpień poszczególnych słów w dokumencie.
+    \item Term Frequency-Inverse Document Frequency (TF-IDF) \\
+        Mierzy ważność słowa w dokumencie, uwzględniając jego częstość w całym korpusie. \\
+        Term Frequency (TF) to liczba wystąpień słowa w dokumencie, a Inverse Document Frequency (IDF) to logarytmiczna odwrotność liczby przepisów zawierających to słowo. \\
+        TF-IDF jest obliczane jako iloczyn TF i IDF.
+    \item TF-IDF z cechami manualnymi \\
+        Oprócz standardowego TF-IDF, dodajemy cechy takie jak liczba słów lub cechy dla różnych kategorii (np. fats and sweets, proteins, cooking methods heavy). Każda kategoria ma pewien zbiór słów kluczowych, których szukamy w tekście.
+    \item Word2Vec \\
+        Każde słowo jest reprezentowane jako wektor w przestrzeni wielowymiarowej, a dokument jest reprezentowany jako średnia wektorów słów w nim zawartych. Do wyliczenia wektorów trenujemy algorytm Word2Vec na naszym korpusie instrukcji.
+\end{itemize}
+
+    \noindent W Count i TF-IDF odrzucamy słowa, które występują w małej liczbie przepisów np. w mniej niż 3 przepisach oraz takie, które występują w bardzo dużej liczbie przepisów np. w więcej niż 90\% przepisów. Wybieramy też stałą liczbę cech (np. 5000) i bierzemy tylko te najczęściej występujące (Aby uniknąć zbyt dużej liczby cech, które mogą spowolnić działanie modelu). \\
+    W tych 2 metodach używamy też bigramów (par słów występujących obok siebie). 
+
+\subsection*{Porównanie metod wektoryzacji}
+
+\noindent W pliku \texttt{compare\_vectorizers.py} porównujemy różne metody wektoryzacji. \\
+
+\noindent Metody te porównujemy używając prostego modelu regresji liniowej z regularyzacją L2 (Ridge) i porównując średni błąd bezwzględny (MAE), pierwiastek średniego błędu kwadratowego (RMSE) i współczynnik determinacji ($R^2$). \\
+($R^2$ mówi nam, jak model jest lepszy niż prosty model, który zawsze przewiduje średnią wartość. $R^2$ = 0 oznacza, że model jest tak dobry jak ten prosty model, a $R^2$ = 1 oznacza idealne dopasowanie do danych).\\
+
+\noindent Ponieważ wykresy rozkładu cech są skośne to modele przewidują logarytm wartości, a następnie bierzemy wykładnik z przewidywań, aby otrzymać przewidywane wartości. \\
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wyniki ewaluacji modeli na zbiorze Walidacyjnym}
+    \label{tab:wyniki_wektoryzacji_val}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|l|l|r|r|r|}
+        \hline
+        \textbf{Metoda} & \textbf{Zmienna docelowa} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} \\ \hline
+        
+        \textbf{Count} & Calories & 144.968 & 220.498 & 0.0309 \\ 
+        & Fat & 9.711 & 19.886 & -0.6010 \\ 
+        & Carbohydrates & 16.910 & 35.965 & -1.0373 \\ 
+        & Protein & 8.221 & 15.138 & -0.0421 \\ \hline
+        
+        \textbf{TF-IDF} & Calories & 135.859 & 193.744 & 0.2518 \\ 
+        & Fat & 8.801 & 13.839 & 0.2246 \\ 
+        & Carbohydrates & 15.344 & 22.762 & 0.1840 \\ 
+        & Protein & 7.053 & 11.411 & 0.4079 \\ \hline
+        
+        \textbf{TF-IDF + Manual} & Calories & 134.645 & 191.838 & 0.2664 \\ 
+        & Fat & 8.676 & 13.678 & 0.2426 \\ 
+        & Carbohydrates & 15.093 & 22.465 & 0.2051 \\ 
+        & Protein & 7.018 & 11.381 & 0.4110 \\ \hline
+        
+        \textbf{Word2Vec} & Calories & 151.638 & 214.352 & 0.0842 \\ 
+        & Fat & 9.926 & 15.258 & 0.0574 \\ 
+        & Carbohydrates & 16.995 & 24.716 & 0.0378 \\ 
+        & Protein & 8.100 & 12.852 & 0.2489 \\ \hline
+    \end{tabular}
+\end{table}
+
+\noindent Proste zliczanie radzi sobie bardzo słabo, nawet gorzej od modelu, który zawsze przewiduje średnią wartość. TF-IDF daje znaczną poprawę, a dodanie cech manualnych daje jeszcze niewielką poprawę. Word2Vec radzi sobie gorzej niż TF-IDF, co może być spowodowane tym, że średnia wektorów słów może nie być najlepszym sposobem reprezentacji całego przepisu. \\ 
+
+\noindent Warto zauważyć że przewidywanie ilości białka jest łatwiejsze niż przewidywanie kalorii oraz pozostałych makroskładników.
+
+\section*{Regresja z regularyzacją}
+
+
+\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{../img/regularization_heatmaps.png}
+    \caption{Współczynnik ($R^2$) dla regresji Elastic Net w zależności od parametrów regularyzacji l1 i l2.}
+    \label{fig:elasticnet_regularization}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{../img/regularization_plot.png}
+    \caption{Współczynnik ($R^2$) dla regresji Ridge w zależności od parametru regularyzacji l2.}
+    \label{fig:ridge_regularization}
+\end{figure}
+
+\noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zalezności od zmiennej docelowej. \\
+
+\noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokłądniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
+
 
 \section*{Założenia odnośnie modeli}
 Do treningu modeli wykorzystujemy zbiór składający się z $120\,000 - \epsilon$ wierszy, gdzie wartość $\epsilon$ wynika z procesu odfiltrowania niepoprawnych lub brakujących cech. Do testów rezerwujemy osobny podzbiór liczący $80\,000 - \epsilon$ wierszy. Przed podziałem dane zostały w pełni przetasowane. 
@@ -204,4 +359,39 @@ Analizując krzywą uczenia możemy zobaczyć, że wypłaszcza się ona znacznie
 
 \subsection*{Custom AdaBoost Regressor}
 Widząc wyniki LGBM, chcieliśmy napisać coś podobnego. Bez tylu optymalizacji, ale żeby było nasze. Udało nam się to napisać z ograniczeniem na liczbę głębokości. Jednak model z grubsza nie działa, a przynajmniej nie działa współpracując z mocą obliczeniową jaką posiadamy. Próbując wytrenować model z 40 drzewami, zajęło to nam prawie 4.5h. A niestety model nic nie przwidywał. Dodanie większej ilości drzew mogło by pomóc, jednak nie byli byśmy w stanie tego wytrenować.
+
+\subsection*{Sieć Neuronowa}
+
+W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTargetRecipeRegressor} z biblioteki PyTorch, która jest w stanie przewidywać jednocześnie wszystkie 4 zmienne docelowe. Sieć ta składa się z warstwy embedding (która zamienia słowa na wektory), average pooling (która uśrednia wektory słów, aby umożliwić trenowanie sieci na danych o różnej długości), oraz kilku warstw liniowych z funkcją aktywacji ReLU. \\
+Aby zapobiec overfittingowi, używamy dropoutu (losowe wyłączanie części neuronów podczas treningu). \\
+Używamy optymalizatora AdamW, który jest rozszerzeniem optymalizatora Adam o regularyzacje. \\ 
+Poniżej tabelka z wynikami, widać że sieć neuronowa radzi sobie dosyć dobrze, nalpiej przewiduje ilość białka jak inne modele. \\
+Poniżej znajduje się też wykres strat w zależności od epoki. Widać że po paru epokach loss na zbiorze walidacyjnym zaczyna rosnąć, co oznacza że sieć zaczyna się przeuczać. Nawet wysoki wspolczynnik dropout i regularyzacje nie pomogły w pełni zapobiec overfittingowi. \\
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wyniki metryk regresji dla poszczególnych zmiennych docelowych}
+    \label{tab:wyniki_modelu}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Target} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{R2} \\
+        \midrule
+        calories      & 113.9429 & 24199.7188 & 155.5626 & 0.4071 \\
+        fat           &   7.7016 &   117.4648 &  10.8381 & 0.3874 \\
+        carbohydrates &  13.3620 &   338.4456 &  18.3969 & 0.3827 \\
+        protein       &   5.7947 &    79.3103 &   8.9056 & 0.5736 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{../img/neural_network.png}
+    \caption{Wykres strat dla sieci neuronowej w zależności od epoki.}
+    \label{fig:neural_network_loss}
+\end{figure}
+
+
+
+
 \end{document} 
