@@ -41,10 +41,10 @@ def load_test_data():
 
 def print_markdown_table(model_name: str, results: list):
     print(f"\nWyniki dla modelu: **{model_name}**")
-    print("| Target | MAE | MSE | RMSE | R2 |")
-    print("|---|---|---|---|---|")
+    print("| Target | MAE | RMSE | R2 |")
+    print("|---|---|---|---|")
     for r in results:
-        print(f"| {r['Target']} | {r['MAE']:.4f} | {r['MSE']:.4f} | {r['RMSE']:.4f} | {r['R2']:.4f} |")
+        print(f"| {r['Target']} | {r['MAE']:.4f} | {r['RMSE']:.4f} | {r['R2']:.4f} |")
     print("", flush=True)
 
 
@@ -53,7 +53,7 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
     if df.empty:
         return
         
-    for col in ["MAE", "MSE", "RMSE", "R2"]:
+    for col in ["MAE", "RMSE", "R2"]:
         if col in df.columns:
             df[col] = df[col].apply(lambda x: f"{x:.3f}")
     
@@ -61,8 +61,8 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
     ax.axis('tight')
     ax.axis('off')
     
-    if len(df.columns) == 6:
-        custom_col_widths = [0.35, 0.15, 0.12, 0.12, 0.12, 0.12]
+    if len(df.columns) == 5:
+        custom_col_widths = [0.35, 0.15, 0.15, 0.15, 0.15]
     else:
         custom_col_widths = None
 
@@ -152,15 +152,14 @@ def main():
                 y_pred_target = predictions[:, idx]
 
                 mae = mean_absolute_error(y_true_target, y_pred_target)
-                mse = mean_squared_error(y_true_target, y_pred_target)
-                rmse = np.sqrt(mse)
+                mse_val = mean_squared_error(y_true_target, y_pred_target)
+                rmse = np.sqrt(mse_val)
                 r2 = r2_score(y_true_target, y_pred_target)
 
                 metric_row = {
                     "Model": model_name,
                     "Target": target_name,
                     "MAE": mae,
-                    "MSE": mse,
                     "RMSE": rmse,
                     "R2": r2
                 }
