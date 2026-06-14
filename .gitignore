@@ -8,5 +8,3 @@ data/recipes.csv
 *.fls
 raport.log
 *.synctex.gz
-
-*.pdf
