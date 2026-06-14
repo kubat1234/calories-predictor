@@ -26,10 +26,10 @@
 W naszym projekcie pracujemy nad datasetem {TODO wstaw ładny link do https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews}. Zawiera on przepisy składające się z opisu dania, składników, instrukcji przygotowania, składników odrzywczych, calorii, liczby porcji dania itd. W naszych modelach będziemy rozważać jako argumnty jedynie instrukcje przygotowania dania ale przetestujemy też modele z dodakowym arguemnetm czyli liczbą porcji. Rozwarzając instrukcje przygotowania nie zwracamy uwagi na wartości liczb. Rozważamy jedynie słowa zawierające się w tekście. Będziemy przewidywać liczbę kalorii, tłuszczu, węglii i białek w rozważanych danych. Z racji, że samo zadanie jes dość skomplikowane, ponieważ w modelu 5g masła i 100g masła będą dokładnie tak samo interpretowane, nie spodziewamy się zbyt wysokich wyników. Jednak można założyć, że część informacji uda się wyciągąć, ponieważ na ogół przepisy zamieszone w internecie są przygotowywyane dla skończonej liczby osób (2-4). Zatem rozbierzność nie powinna być aż tak duża.
 
 \subsection*{Porcje danych wybrane do trenowania modeli}
-Do treningu danych używamy $120 000 - \epsi$ wierszy danych .
+Do treningu danych używamy $120 000 - \epsilon$ wierszy danych .
 
 \section*{Analiza danych}
-Nasz dataset składał się z wielu kolumn, my skupiliśmy się na przewidywaniu kalorii, węglowodanów, białka i tłuszczu na podstawie tekstowych instrukcji oraz liczby porcji (tylko niektóre modele). \\
+W pliku \texttt{src/analyze\_data.py} przeprowadzamy analize danych. Nasz dataset składał się z wielu kolumn, my skupiliśmy się na przewidywaniu kalorii, węglowodanów, białka i tłuszczu na podstawie tekstowych instrukcji oraz liczby porcji (tylko niektóre modele). \\
 
 \noindent Przykładowy wiersz z datasetu: \\
 
@@ -92,13 +92,15 @@ Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into 
 
 \section*{Ekstrakcja cech}
 
+\noindent W plikach w \texttt{src/get\_data.py}, \texttt{src/features.py} oraz \texttt{src/features.py} wczytujemy dane, tokenizujemy tekst i wektoryzujemy.
+
 \subsection*{Tokenizacja}
 
-Z tekstu usuwamy interpunkcję, liczby i znaki specjalne, a następnie dzielimy tekst na słowa.
+\noindent Z tekstu usuwamy interpunkcję, liczby i znaki specjalne, a następnie dzielimy tekst na słowa. \\
 
 \subsection*{Wektoryzacja}
 
-Testujemy różne metody wektoryzacji:
+\noindent Testujemy różne metody wektoryzacji:
 
 \begin{itemize}
     \item Zwykłe zliczanie słów (Count Vectorizer) \\
@@ -118,7 +120,9 @@ Testujemy różne metody wektoryzacji:
 
 \subsection*{Porównanie metod wektoryzacji}
 
-Metody te porównuje używając prostego modelu regresji liniowej z regularyzacją L2 (Ridge) i porównując średni błąd bezwzględny (MAE), pierwiastek średniego błędu kwadratowego (RMSE) i współczynnik determinacji ($R^2$). \\
+\noindent W pliku \texttt{compare\_vectorizers.py} porównujemy różne metody wektoryzacji. \\
+
+\noindent Metody te porównujemy używając prostego modelu regresji liniowej z regularyzacją L2 (Ridge) i porównując średni błąd bezwzględny (MAE), pierwiastek średniego błędu kwadratowego (RMSE) i współczynnik determinacji ($R^2$). \\
 ($R^2$ mówi nam, jak model jest lepszy niż prosty model, który zawsze przewiduje średnią wartość. $R^2$ = 0 oznacza, że model jest tak dobry jak ten prosty model, a $R^2$ = 1 oznacza idealne dopasowanie do danych).\\
 
 \noindent Ponieważ wykresy rozkładu cech są skośne to modele przewidują logarytm wartości, a następnie bierzemy wykładnik z przewidywań, aby otrzymać przewidywane wartości. \\
@@ -160,7 +164,8 @@ Metody te porównuje używając prostego modelu regresji liniowej z regularyzacj
 
 \section*{Regresja z regularyzacją}
 
-Przetestowaliśmy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
+
+\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
 
 \begin{figure}[H]
     \centering
@@ -179,5 +184,37 @@ Przetestowaliśmy analityczna regresję liniową z regularyzacją L2 (Ridge) ora
 \noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zalezności od zmiennej docelowej. \\
 
 \noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokłądniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
+
+\subsection*{Sieć Neuronowa}
+
+W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTargetRecipeRegressor} z biblioteki PyTorch, która jest w stanie przewidywać jednocześnie wszystkie 4 zmienne docelowe. Sieć ta składa się z warstwy embedding (która zamienia słowa na wektory), average pooling (która uśrednia wektory słów, aby umożliwić trenowanie sieci na danych o różnej długości), oraz kilku warstw liniowych z funkcją aktywacji ReLU. \\
+Aby zapobiec overfittingowi, używamy dropoutu (losowe wyłączanie części neuronów podczas treningu). \\
+Używamy optymalizatora AdamW, który jest rozszerzeniem optymalizatora Adam o regularyzacje. \\ 
+Poniżej tabelka z wynikami, widać że sieć neuronowa radzi sobie dosyć dobrze, nalpiej przewiduje ilość białka jak inne modele. \\
+Poniżej znajduje się też wykres strat w zależności od epoki. Widać że po paru epokach loss na zbiorze walidacyjnym zaczyna rosnąć, co oznacza że sieć zaczyna się przeuczać. Nawet wysoki wspolczynnik dropout i regularyzacje nie pomogły w pełni zapobiec overfittingowi. \\
+
+\begin{table}[htbp]
+    \centering
+    \caption{Wyniki metryk regresji dla poszczególnych zmiennych docelowych}
+    \label{tab:wyniki_modelu}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Target} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{R2} \\
+        \midrule
+        calories      & 113.9429 & 24199.7188 & 155.5626 & 0.4071 \\
+        fat           &   7.7016 &   117.4648 &  10.8381 & 0.3874 \\
+        carbohydrates &  13.3620 &   338.4456 &  18.3969 & 0.3827 \\
+        protein       &   5.7947 &    79.3103 &   8.9056 & 0.5736 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{img/neural_network.png}
+    \caption{Wykres strat dla sieci neuronowej w zależności od epoki.}
+    \label{fig:neural_network_loss}
+\end{figure}
+
 
 \end{document}
