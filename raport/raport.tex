@@ -164,30 +164,6 @@ Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into 
 
 \noindent Warto zauważyć że przewidywanie ilości białka jest łatwiejsze niż przewidywanie kalorii oraz pozostałych makroskładników.
 
-\section*{Regresja z regularyzacją}
-
-
-\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{../img/regularization_heatmaps.png}
-    \caption{Współczynnik ($R^2$) dla regresji Elastic Net w zależności od parametrów regularyzacji l1 i l2.}
-    \label{fig:elasticnet_regularization}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{../img/regularization_plot.png}
-    \caption{Współczynnik ($R^2$) dla regresji Ridge w zależności od parametru regularyzacji l2.}
-    \label{fig:ridge_regularization}
-\end{figure}
-
-\noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zalezności od zmiennej docelowej. \\
-
-\noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokłądniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
-
-
 \section*{Założenia odnośnie modeli}
 Do treningu modeli wykorzystujemy zbiór składający się z $120\,000 - \epsilon$ wierszy, gdzie wartość $\epsilon$ wynika z procesu odfiltrowania niepoprawnych lub brakujących cech. Do testów rezerwujemy osobny podzbiór liczący $80\,000 - \epsilon$ wierszy. Przed podziałem dane zostały w pełni przetasowane. 
 
@@ -280,6 +256,30 @@ Zaimplementowaliśmy również modele bazujący na ręcznie przygotowanym wektor
 
 Możemy zauważyć, że dodanie manualnych cech poprawia model, jednak ilość porcji osłabia.
 
+\subsection*{Regresja z regularyzacją}
+
+
+\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{../img/regularization_heatmaps.png}
+    \caption{Współczynnik ($R^2$) dla regresji Elastic Net w zależności od parametrów regularyzacji l1 i l2.}
+    \label{fig:elasticnet_regularization}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{../img/regularization_plot.png}
+    \caption{Współczynnik ($R^2$) dla regresji Ridge w zależności od parametru regularyzacji l2.}
+    \label{fig:ridge_regularization}
+\end{figure}
+
+\noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zalezności od zmiennej docelowej. \\
+
+\noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokłądniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
+
+
 \subsection*{Neural net}
 Kolejnym rozważanym przez nas rozwiązaniem jest sieć neuronowa. Biorąc pod uwagę specyfikę oraz charakter zadania, struktura sieci nie musi być nadmiernie głęboka. Zdecydowaliśmy się na architekturę o dwóch warstwach ukrytych o wielkościach odpowiednio 64 i 32 neurony z funkcjami aktywacji ReLU. Model trenowaliśmy przez 20 epok z learning rate 0.1 oraz batchami wielkości 64. Parametry wdobraliśmy eksperymentalnie.
 
@@ -308,6 +308,31 @@ Wyniki są nieco lepsze od naszego modelu regresji liniowej, jednak i tak słabs
 
 Analizując krzywą uczenia możemy dojść do wniosku, że model wpada w lokalne minima. Próbowaliśmy to naprawić za pomocą optymalizajci adam, jednak nie udało nam się znaleźć parametrów, dla których model zwróciłby dodatnie $R^2$.
 Wniosek jest taki, że zdecydownaie można poprawić ten model, ale sam wynik nie jest zły.
+
+\subsection*{Random Forest}
+Model random forest trenowaliśmy z 10 drzewami o głębokości 15. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../img/stats/my_tfidf_random_forest.png}
+    \label{fig:nn_comparison}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../img/learning_curve_tfidf__random_forest.png}
+        \label{fig:learning_curve_nn}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../img/max_features_tfidf_random_forest.png}
+        \label{fig:max_features_nn}
+    \end{minipage}
+\end{figure}
+
+Mimo tak małej liczby drzew, model uzykuje dość sensowyny wynik ale widać na krzywych, że bardzo szybko się wypłaszczają co może świadczyć o prostocie modelu. 
 
 \subsection*{Light gradient boosted machine}
 Jest to model, który korzysta z boostingu, gdzie jako słabe estymatory wykorzystuje drzewa decyzyjne. Z najważniejszych optymalizaji to ograniczenie nie na głębokość, lecz na liczbę liści w drzewie, dzielenie przedziału wartości ciągłych na bloki w preprocesingu, tak aby rozważać tylko ograniczoną ilość podziałow, pomijanie części obserwacji o małych wartościach gradientu, skupiając się jedynie na wartościach trudnych do sklasyfikowania.\\
@@ -391,6 +416,14 @@ Poniżej znajduje się też wykres strat w zależności od epoki. Widać że po 
     \label{fig:neural_network_loss}
 \end{figure}
 
+\section*{Podsumowanie}
+\begin{itemize}
+    \item Na podstawie naszych obserwacji najlepszym vectorizerem jest generalnie TF-IDF. Wyniki pomiędzy naszą implementacją, implemnetacją ze scikit learn oraz połączenie z manualem dawało różne wyniki dla różnych modeli, zatem nie możemy określić który z nich jest najlepszy. 
+    \item Analizując proste modele, możemy zauwarzyć, że są one w stanie dość dobrze przewidzieć wynik ($R^2$ około 0.25). Jednak aby uzyskać lepsze wyniki, potrzebujemy dość słożonych modeli jak LGBM z 1000 drzew, lub duża sieć nauronowa. 
+    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, nsęþny była sieć nauronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
+    \item Każdy model najlpiej radził sobie z szcowaniem ilości białek, prawdopdbnie dlatego, że białko pochodzi ze ściśle określonych produktów (np. kuraczak albo mleko), a pozostałe rzeczy występują praktycznie wszędzie. 
+    \item Biorąc pod uwagę trudność przwidywania kalorii, uznajemny nasze wyniki za zadowalające.
+\end{itemize}    
 
 
 
