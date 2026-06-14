@@ -1,9 +1,7 @@
 import re
 import unicodedata
 
-TOKEN_PATTERN = re.compile(r"[a-ząćęłńóśźż]+(?:[./][a-ząćęłńóśźż]+)*")
-# TOKEN_PATTERN = re.compile(r"[a-ząćęłńóśźż0-9]+(?:[-./][a-ząćęłńóśźż0-9]+)*")
-
+TOKEN_PATTERN = re.compile(r"[a-z]+(?:[./][a-z]+)*")
 
 def tokenize(text):
 	normalized = unicodedata.normalize("NFKC", text.lower())

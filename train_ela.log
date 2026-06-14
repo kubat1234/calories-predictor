@@ -1,0 +1,25 @@
+Wczytuje dane treningowe...
+Liczba probek treningowych: 114,340, liczba targetow: 4
+
+--------------------------------------------------
+Eksperyment: manual_tfidf + elasticnet_gd
+  1. Wektoryzacja danych...
+  => Rzeczywista liczba cech (features) wejściowych: 2008
+  2. Trenowanie modelu (może chwilę potrwać)...
+Gotowe! Zapisano: saved/app/manual_tfidf_elasticnet_gd.joblib (Całkowity czas: 170.6s)
+
+--------------------------------------------------
+Eksperyment: tfidf + elasticnet_gd
+  1. Wektoryzacja danych...
+  => Rzeczywista liczba cech (features) wejściowych: 2000
+  2. Trenowanie modelu (może chwilę potrwać)...
+Gotowe! Zapisano: saved/app/tfidf_elasticnet_gd.joblib (Całkowity czas: 563.7s)
+
+--------------------------------------------------
+Eksperyment: my_tfidf + elasticnet_gd
+  1. Wektoryzacja danych...
+  => Rzeczywista liczba cech (features) wejściowych: 2000
+  2. Trenowanie modelu (może chwilę potrwać)...
+Gotowe! Zapisano: saved/app/my_tfidf_elasticnet_gd.joblib (Całkowity czas: 307.9s)
+
+Zakończono wszystkie eksperymenty.

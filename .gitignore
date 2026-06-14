@@ -2,3 +2,11 @@ src/__pycache__
 __pycache__
 .venv
 data/recipes.csv
+
+*.aux
+*.fdb_latexmk
+*.fls
+raport.log
+*.synctex.gz
+
+*.pdf

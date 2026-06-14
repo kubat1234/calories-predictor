@@ -41,29 +41,35 @@ def load_test_data():
 
 def print_markdown_table(model_name: str, results: list):
     print(f"\nWyniki dla modelu: **{model_name}**")
-    print("| Target | MAE | MSE | RMSE | R2 |")
-    print("|---|---|---|---|---|")
+    print("| Target | MAE | RMSE | R2 |")
+    print("|---|---|---|---|")
     for r in results:
-        print(f"| {r['Target']} | {r['MAE']:.4f} | {r['MSE']:.4f} | {r['RMSE']:.4f} | {r['R2']:.4f} |")
+        print(f"| {r['Target']} | {r['MAE']:.4f} | {r['RMSE']:.4f} | {r['R2']:.4f} |")
     print("", flush=True)
 
 
-def save_results_to_png(all_results: list, output_filename: str = "results_summary.png"):
+def save_results_to_png(all_results: list, output_filename: str = "results_summary.png", title: str = "Zestawienie wyników modeli"):
     df = pd.DataFrame(all_results)
     if df.empty:
         return
         
-    for col in ["MAE", "MSE", "RMSE", "R2"]:
+    for col in ["MAE", "RMSE", "R2"]:
         if col in df.columns:
             df[col] = df[col].apply(lambda x: f"{x:.3f}")
     
-    fig, ax = plt.subplots(figsize=(10, 1 + len(df) * 0.3))
+    fig, ax = plt.subplots(figsize=(12, 1 + len(df) * 0.3))
     ax.axis('tight')
     ax.axis('off')
     
+    if len(df.columns) == 5:
+        custom_col_widths = [0.35, 0.15, 0.15, 0.15, 0.15]
+    else:
+        custom_col_widths = None
+
     table = ax.table(
         cellText=df.values, 
-        colLabels=df.columns, 
+        colLabels=df.columns,
+        colWidths=custom_col_widths,
         loc='center', 
         cellLoc='center'
     )
@@ -76,10 +82,10 @@ def save_results_to_png(all_results: list, output_filename: str = "results_summa
             cell.set_text_props(weight='bold', color='white')
             cell.set_facecolor('#4c72b0')
     
-    plt.title("Zestawienie wyników modeli", pad=20, fontsize=14, weight='bold')
+    plt.title(title, pad=20, fontsize=14, weight='bold')
     plt.savefig(output_filename, bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"\nZapisano zestawienie wyników do pliku: {output_filename}")
+    print(f"Zapisano zestawienie wyników do pliku: {output_filename}")
 
 
 def parse_args():
@@ -122,6 +128,8 @@ def main():
     X_test, y_test = load_test_data()
     print(f"Dane wczytane. Rozmiar zbioru testowego: {len(X_test):,} próbek.\n")
 
+    stats_dir = Path("img/stats")
+
     all_results = []
 
     for path in models_to_test:
@@ -144,15 +152,14 @@ def main():
                 y_pred_target = predictions[:, idx]
 
                 mae = mean_absolute_error(y_true_target, y_pred_target)
-                mse = mean_squared_error(y_true_target, y_pred_target)
-                rmse = np.sqrt(mse)
+                mse_val = mean_squared_error(y_true_target, y_pred_target)
+                rmse = np.sqrt(mse_val)
                 r2 = r2_score(y_true_target, y_pred_target)
 
                 metric_row = {
                     "Model": model_name,
                     "Target": target_name,
                     "MAE": mae,
-                    "MSE": mse,
                     "RMSE": rmse,
                     "R2": r2
                 }
@@ -160,12 +167,23 @@ def main():
                 all_results.append(metric_row)
 
             print_markdown_table(model_name, model_metrics)
+            
+            individual_output_path = stats_dir / f"{model_name}.png"
+            save_results_to_png(
+                model_metrics, 
+                output_filename=str(individual_output_path), 
+                title=f"Wyniki modelu: {model_name}"
+            )
 
         except Exception as e:
             print(f"Błąd podczas testowania {model_name}: {e}\n")
 
     if all_results:
-        save_results_to_png(all_results)
+        save_results_to_png(
+            all_results, 
+            output_filename="results_summary.png", 
+            title="Zbiorcze zestawienie wyników modeli"
+        )
 
 
 if __name__ == "__main__":

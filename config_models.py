@@ -10,9 +10,11 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer
+from src.features import ManualTfidfVectorizer, Word2VecVectorizer, MyTfidfVectorizer
 from src.models.ElasticNetGDRegressor import ElasticNetGDRegressor
 from src.models.CustomAdaBoostRegressor import CustomAdaBoostRegressor
+from src.models.CustomNeuralNetworkRegressor import CustomNeuralNetworkRegressor
+from src.models.DumbRegressor import DumbRegressor
 from src.tokenize import tokenize
 
 from config_constants import RANDOM_SEED, TFIDF_MAX_FEATURES
@@ -37,28 +39,41 @@ def build_models():
                 num_leaves=31,
                 subsample=0.8,
                 colsample_bytree=0.8,
-                n_jobs=-1,
+                n_jobs=70,
                 random_state=RANDOM_SEED, 
                 verbose=-1,
             ),
             func=np.log1p,
             inverse_func=np.expm1,
         )
-
     return {
         "ridge": {
-            "factory": lambda: Ridge(alpha=1.0),
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=Ridge(alpha=1.0),
+                func=np.log1p,
+                inverse_func=np.expm1,
+            ),
             "requires_dense": False,
             "supports_multioutput": True,
             "uses_servings": False,
         },
+        "ridge_servings": {
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=Ridge(alpha=1.0),
+                func=np.log1p,
+                inverse_func=np.expm1,
+            ),
+            "requires_dense": False,
+            "supports_multioutput": True,
+            "uses_servings": True,
+        },
         "elasticnet_gd": {
             "factory": lambda: TransformedTargetRegressor(
                 regressor=ElasticNetGDRegressor(
-                    learning_rate=0.07, 
-                    max_iter=2000,   
-                    l1=0.0001, 
-                    l2=0.0001,
+                    learning_rate=0.1, 
+                    max_iter=1000,   
+                    l1=0.01, 
+                    l2=0.01,
                 ),
                 func=np.log1p,
                 inverse_func=np.expm1,
@@ -72,22 +87,16 @@ def build_models():
                 n_estimators=10,
                 max_depth=15,
                 random_state=RANDOM_SEED,
-                n_jobs=-1,
+                n_jobs=24,
             ),
             "requires_dense": True,
             "supports_multioutput": True,
             "uses_servings": False,
         },
-        "mlp": {
-            "factory": lambda: MLPRegressor(
-                hidden_layer_sizes=(100,),
-                activation="relu",
-                solver="adam",
-                max_iter=200,
-                random_state=RANDOM_SEED, 
-            ),
+        "dumb": {
+            "factory": lambda: DumbRegressor(),
             "requires_dense": True,
-            "supports_multioutput": True,
+            "supports_multioutput": False,
             "uses_servings": False,
         },
         "lgbm": {
@@ -103,16 +112,37 @@ def build_models():
             "uses_servings": True,
         },
         "custom_adaboost": {
-            "factory": lambda: CustomAdaBoostRegressor(
-                n_estimators=200,          # Ilość estymatorów
-                max_depth=4,              # Płytkie drzewa dobrze działają w boostingu
-                min_samples_split=20,
-                max_features="sqrt",      # Zapobiega overfittingowi
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=CustomAdaBoostRegressor(
+                    n_estimators=40,       
+                    max_depth=4, 
+                    min_samples_split=4, 
+                    min_samples_leaf=2, 
+                    max_features=None 
+                ),
+                func=np.log1p,
+                inverse_func=np.expm1,
             ),
-            "requires_dense": True,       # Niezbędne do slice'owania tablic w CustomDecisionTree
-            "supports_multioutput": False,# Pipeline owinie to w MultiOutputRegressor
+            "requires_dense": True,
+            "supports_multioutput": False,
             "uses_servings": False,
         },
+        "custom_nn": {
+            "factory": lambda: TransformedTargetRegressor(
+                regressor=CustomNeuralNetworkRegressor(
+                    layer_sizes=[64, 32, 1],
+                    epochs=40,
+                    learning_rate=0.01,
+                    batch_size=64,
+                    random_state=RANDOM_SEED
+                ),
+                func=np.log1p,
+                inverse_func=np.expm1,
+            ),
+            "requires_dense": True,
+            "supports_multioutput": False,
+            "uses_servings": False,
+        }
     }
 
 

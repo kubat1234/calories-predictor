@@ -21,13 +21,16 @@ TRAIN_SIZES = np.linspace(0.05, 1.0, 8)
 VAL_SIZE = 0.2
 
 EXPERIMENTS = [
-    ("tfidf", "ridge"),
-    ("manual_tfidf", "ridge"),
-    ("tfidf", "random_forest"),
-    ("tfidf", "lgbm"),          
-    ("tfidf", "lgbm_servings"),  
-    ("manual_tfidf", "lgbm"),          
-    ("manual_tfidf", "lgbm_servings"),  
+    # ("tfidf", "ridge"),
+    # ("manual_tfidf", "ridge"),
+    # ("tfidf", "elasticnet_gd"),
+    # ("manual_tfidf", "elasticnet_gd"),
+    # ("tfidf", "random_forest"),
+    # ("tfidf", "lgbm"),          
+    # ("tfidf", "lgbm_servings"),  
+    # ("manual_tfidf", "lgbm"),          
+    # ("manual_tfidf", "lgbm_servings"),  
+    ("tfidf", "custom_nn"),  
 ]
 
 

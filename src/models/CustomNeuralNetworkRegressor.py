@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils import check_random_state 
+from sklearn.utils import check_random_state
 
 class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
     def __init__(self, layer_sizes, epochs=5, learning_rate=0.001, batch_size=64, print_every=1, random_state=None):
@@ -9,21 +9,18 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.print_every = print_every
-        self.random_state = random_state 
-        
+        self.random_state = random_state
         self.weights = []
         self.biases = []
 
     def _initialize_parameters(self):
         self.weights = []
         self.biases = []
-        for i in range(len(self.layer_sizes) - 1):
-            in_dim = self.layer_sizes[i]
-            out_dim = self.layer_sizes[i + 1]
-            
+        for i in range(len(self.full_layer_sizes_) - 1):
+            in_dim = self.full_layer_sizes_[i]
+            out_dim = self.full_layer_sizes_[i + 1]
             W = self.rng_.normal(0, np.sqrt(2.0 / in_dim), size=(out_dim, in_dim))
             B = np.zeros((out_dim, 1))
-            
             self.weights.append(W)
             self.biases.append(B)
 
@@ -55,7 +52,6 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
     def _backward_pass(self, all_f, all_h, y):
         L = len(self.weights)
         current_batch_size = y.shape[1]
-        
         all_dl_dweights = [None] * L
         all_dl_dbiases = [None] * L
         all_dl_df = [None] * L
@@ -66,7 +62,6 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
         for layer in range(L - 1, -1, -1):
             all_dl_dbiases[layer] = np.sum(all_dl_df[layer], axis=1, keepdims=True) / current_batch_size
             all_dl_dweights[layer] = np.matmul(all_dl_df[layer], all_h[layer].T) / current_batch_size
-            
             if layer > 0:
                 all_dl_dh[layer] = np.matmul(self.weights[layer].T, all_dl_df[layer])
                 all_dl_df[layer - 1] = all_dl_dh[layer] * self._indicator_function(all_f[layer - 1])
@@ -76,30 +71,26 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
     def fit(self, X, Y):
         X = np.asarray(X)
         Y = np.asarray(Y)
-        
         self.rng_ = check_random_state(self.random_state)
-        
+        input_dim = X.shape[1]
+        self.full_layer_sizes_ = [input_dim] + list(self.layer_sizes)
         self._initialize_parameters()
         n_samples = len(X)
-        
         total_batches = int(np.ceil(n_samples / self.batch_size))
         
-        print(f"Rozpoczęcie trenowania (architektura: {self.layer_sizes}, batch_size: {self.batch_size})...")
+        print(f"Rozpoczęcie trenowania (architektura: {self.full_layer_sizes_}, batch_size: {self.batch_size})...")
         print(f"Liczba próbek: {n_samples} | Liczba batchy na epokę: {total_batches}\n")
         
         for epoch in range(self.epochs):
             indices = np.arange(n_samples)
             self.rng_.shuffle(indices)
-            
             total_loss = 0
             num_batches = 0
             
             for i in range(0, n_samples, self.batch_size):
                 batch_indices = indices[i:i + self.batch_size]
-                
                 X_batch = X[batch_indices]
                 Y_batch = Y[batch_indices]
-                
                 x = X_batch.T
                 y = Y_batch.reshape(1, -1)
                 
@@ -109,12 +100,12 @@ class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
                 num_batches += 1
                 
                 all_dl_dweights, all_dl_dbiases = self._backward_pass(all_f, all_h, y)
-                
                 clip_val = 1.0
+                
                 for layer in range(len(self.weights)):
                     all_dl_dweights[layer] = np.clip(all_dl_dweights[layer], -clip_val, clip_val)
                     all_dl_dbiases[layer] = np.clip(all_dl_dbiases[layer], -clip_val, clip_val)
-                
+                    
                 for layer in range(len(self.weights)):
                     self.weights[layer] -= self.learning_rate * all_dl_dweights[layer]
                     self.biases[layer] -= self.learning_rate * all_dl_dbiases[layer]
