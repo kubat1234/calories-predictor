@@ -30,15 +30,18 @@ PAD_TOKEN_ID = 0
 UNK_TOKEN_ID = 1
 DEFAULT_MODEL_NAME = "pytorch_nn.pt"
 
-EPOCHS = 20
+EPOCHS = 50
 BATCH_SIZE = 128
-EMBEDDING_DIM = 128
-HIDDEN_DIM = 256
-DROPOUT = 0.5
+EMBEDDING_DIM = 192
+HIDDEN_DIM = 320
+DROPOUT = 0.6
 MAX_SEQ_LEN = 200
 MAX_VOCAB = 50_000
 MIN_TOKEN_FREQ = 5
 LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 1e-3
+EARLY_STOPPING_PATIENCE = 8
+MIN_DELTA = 1e-4
 MODEL_OUTPUT_PATH = MODELS_DIR / DEFAULT_MODEL_NAME
 LOSS_PLOT_PATH = Path("img/neural_network.png")
 
@@ -192,6 +195,10 @@ def run_epoch(model, loader, optimizer, criterion, device, is_train):
 	if total_items == 0:
 		return 0.0
 	return total_loss / total_items
+
+
+def is_improvement(current_loss, best_loss, min_delta):
+	return current_loss < (best_loss - min_delta)
 
 
 def evaluate_metrics(model, loader, device, y_mean, y_std):
@@ -352,7 +359,18 @@ def main():
 		output_dim=len(TARGET_NAMES),
 	).to(device)
 
-	optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+	optimizer = torch.optim.AdamW(
+		model.parameters(),
+		lr=LEARNING_RATE,
+		weight_decay=WEIGHT_DECAY,
+	)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+		optimizer,
+		mode="min",
+		factor=0.5,
+		patience=3,
+		min_lr=1e-6,
+	)
 	criterion = nn.MSELoss()
 
 	print("Rozpoczynam trening...")
@@ -362,19 +380,35 @@ def main():
 	best_val_loss = float("inf")
 	best_epoch = -1
 	best_state_dict = None
+	epochs_without_improvement = 0
 
 	for epoch in range(1, EPOCHS + 1):
 		train_loss = run_epoch(model, train_loader, optimizer, criterion, device, is_train=True)
 		val_loss = run_epoch(model, val_loader, optimizer, criterion, device, is_train=False)
 		train_losses.append(train_loss)
 		val_losses.append(val_loss)
+		scheduler.step(val_loss)
 
-		if val_loss < best_val_loss:
+		if is_improvement(val_loss, best_val_loss, MIN_DELTA):
 			best_val_loss = val_loss
 			best_epoch = epoch
 			best_state_dict = snapshot_state_dict(model)
+			epochs_without_improvement = 0
+		else:
+			epochs_without_improvement += 1
 
-		print(f"Epoka {epoch:03d}/{EPOCHS} | train_loss={train_loss:.4f} | val_loss={val_loss:.4f}")
+		current_lr = optimizer.param_groups[0]["lr"]
+		print(
+			f"Epoka {epoch:03d}/{EPOCHS} | train_loss={train_loss:.4f} | "
+			f"val_loss={val_loss:.4f} | lr={current_lr:.2e}"
+		)
+
+		if epochs_without_improvement >= EARLY_STOPPING_PATIENCE:
+			print(
+				f"Early stopping: brak poprawy val_loss przez "
+				f"{EARLY_STOPPING_PATIENCE} epok."
+			)
+			break
 
 	elapsed = perf_counter() - start
 	print(f"Trening zakonczony po {elapsed:.1f}s")
