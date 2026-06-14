@@ -7,16 +7,15 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-
 from src.config_constants import (
-    MAX_TRAIN_ROWS,
+    DATA_PATH,
     MAX_TEST_ROWS,
+    MAX_TRAIN_ROWS,
+    MODELS_DIR,
     PERCENTILE_FILTER,
     TARGET_NAMES,
-    MODELS_DIR,
-    DATA_PATH
 )
+from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
 
 def load_test_data():

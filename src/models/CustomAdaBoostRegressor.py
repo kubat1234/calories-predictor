@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 
+
 class CustomNodeRegressor:
     def __init__(self, depth):
         self.depth = depth

@@ -8,7 +8,6 @@ from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import Ridge
 
 from src.config_constants import (
     DATA_PATH,

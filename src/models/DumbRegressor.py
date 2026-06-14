@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 
+
 class DumbRegressor(BaseEstimator, RegressorMixin):
     def __init__(self):
         pass

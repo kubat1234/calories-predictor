@@ -6,10 +6,13 @@ import pandas as pd
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
+from config_models import build_models, build_pipeline, build_vectorizers
+from src.config_constants import (
+    PERCENTILE_FILTER,
+    RANDOM_SEED,
+    TEST_SIZE,
+)
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from config_models import build_models, build_vectorizers, build_pipeline
-
-from src.config_constants import (MAX_TRAIN_ROWS, PERCENTILE_FILTER, RANDOM_SEED, TEST_SIZE)
 
 MAX_ROWS = 60000
 PERCENTILE_FILTER = PERCENTILE_FILTER
@@ -20,15 +23,15 @@ TARGET_NAME = "calories"
 MAX_FEATURES_VALUES = [10, 50, 100, 300, 600, 1000, 1500, 2000, 4000]
 
 EXPERIMENTS = [
-    # ("tfidf", "ridge"),
-    # ("manual_tfidf", "ridge"),
-    # ("tfidf", "elasticnet_gd"),
-    # ("manual_tfidf", "elasticnet_gd"),
-    # ("tfidf", "random_forest"),
-    # ("tfidf", "lgbm"),          
-    # ("tfidf", "lgbm_servings"),  
-    # ("manual_tfidf", "lgbm"),          
-    # ("manual_tfidf", "lgbm_servings"),  
+    ("tfidf", "ridge"),
+    ("manual_tfidf", "ridge"),
+    ("tfidf", "elasticnet_gd"),
+    ("manual_tfidf", "elasticnet_gd"),
+    ("tfidf", "random_forest"),
+    ("tfidf", "lgbm"),          
+    ("tfidf", "lgbm_servings"),  
+    ("manual_tfidf", "lgbm"),          
+    ("manual_tfidf", "lgbm_servings"),  
     ("tfidf", "custom_nn"),  
 ]
 

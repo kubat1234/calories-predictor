@@ -1,7 +1,10 @@
-from __future__ import annotations
-
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from src.get_data import load_training_rows
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parent
@@ -10,11 +13,6 @@ if str(CURRENT_DIR) in sys.path:
 	sys.path.remove(str(CURRENT_DIR))
 if str(PROJECT_ROOT) not in sys.path:
 	sys.path.insert(0, str(PROJECT_ROOT))
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-from src.get_data import load_training_rows
 
 FIELDS = [
 	("calories",      "Kalorie (kcal)",             "calories"),
@@ -27,7 +25,7 @@ PERCENTILE_CLIP = 98
 ZERO_SAMPLE_LIMIT = 5
 
 
-def print_stats(name: str, values: list[float]) -> None:
+def print_stats(name, values):
 	print(f"\n{'─' * 40}")
 	print(f"  {name}")
 	print(f"{'─' * 40}")
@@ -42,11 +40,11 @@ def print_stats(name: str, values: list[float]) -> None:
 
 
 def plot_distribution(
-	values: list[float],
-	label: str,
-	filename: str,
-	out_dir: Path,
-) -> None:
+	values,
+	label,
+	filename,
+	out_dir,
+):
 	clip_val = float(np.percentile(values, PERCENTILE_CLIP))
 	clipped = np.array([v for v in values if v <= clip_val], dtype=float)
 	transformed = np.log1p(clipped)
@@ -77,14 +75,13 @@ def plot_distribution(
 	print(f"  Wykres zapisany: {out_path}")
 
 
-def print_sample(rows: list[dict[str, str]], sample_limit: int = ZERO_SAMPLE_LIMIT) -> None:
+def print_sample(rows, sample_limit=ZERO_SAMPLE_LIMIT):
 	print(f"\n{'═' * 80}")
 	print("  Przykładowe przepisy z informacją o wartościach odżywczych")
 	print(f"{'═' * 80}")
 
 	for idx, row in enumerate(rows[:sample_limit], start=1):
 		instructions_preview = " ".join(row["instructions"].split())
-		# instructions_preview = instructions_preview[:200] + ("..." if len(instructions_preview) > 200 else "")
 
 		print(f"\n  [{idx}]")
 		print(f"      Porcji: {row.get('servings', 'N/A')}")
@@ -92,7 +89,7 @@ def print_sample(rows: list[dict[str, str]], sample_limit: int = ZERO_SAMPLE_LIM
 		print(f"      Instrukcje: {instructions_preview}")
 
 
-def main() -> None:
+def main():
 	data_path = Path("data/recipes.csv")
 	img_dir = Path("img")
 	img_dir.mkdir(exist_ok=True)
@@ -113,9 +110,6 @@ def main() -> None:
 	print(f"\nŚrednia długość instrukcji: {avg_length:.2f} znaków")
 
 	print(f"\nGotowe. Wykresy zapisane w folderze: {img_dir.resolve()}")
-
-
-
 
 if __name__ == "__main__":
 	main()

@@ -4,13 +4,12 @@ from time import perf_counter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score 
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
+from config_models import build_models, build_pipeline, build_vectorizers
+from src.config_constants import PERCENTILE_FILTER, RANDOM_SEED
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from config_models import build_models, build_vectorizers, build_pipeline
-
-from src.config_constants import (MAX_TRAIN_ROWS, PERCENTILE_FILTER, RANDOM_SEED)
 
 MAX_ROWS = 60000
 PERCENTILE_FILTER = PERCENTILE_FILTER
@@ -21,16 +20,16 @@ TRAIN_SIZES = np.linspace(0.05, 1.0, 8)
 VAL_SIZE = 0.2
 
 EXPERIMENTS = [
-    # ("tfidf", "ridge"),
-    # ("manual_tfidf", "ridge"),
-    # ("tfidf", "elasticnet_gd"),
-    # ("manual_tfidf", "elasticnet_gd"),
-    # ("tfidf", "random_forest"),
-    # ("tfidf", "lgbm"),          
-    # ("tfidf", "lgbm_servings"),  
-    # ("manual_tfidf", "lgbm"),          
-    # ("manual_tfidf", "lgbm_servings"),  
-    # ("tfidf", "custom_nn"),  
+    ("tfidf", "ridge"),
+    ("manual_tfidf", "ridge"),
+    ("tfidf", "elasticnet_gd"),
+    ("manual_tfidf", "elasticnet_gd"),
+    ("tfidf", "random_forest"),
+    ("tfidf", "lgbm"),          
+    ("tfidf", "lgbm_servings"),  
+    ("manual_tfidf", "lgbm"),          
+    ("manual_tfidf", "lgbm_servings"),  
+    ("tfidf", "custom_nn"),  
 ]
 
 

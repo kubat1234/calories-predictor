@@ -1,34 +1,32 @@
 import argparse
-from pathlib import Path
 from time import perf_counter
 
 import joblib
 import numpy as np
 import pandas as pd
 
-from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from src.config_models import build_models, build_vectorizers, build_pipeline
-
 from src.config_constants import (
+    DATA_PATH,
     MAX_TRAIN_ROWS,
+    MODELS_DIR,
     PERCENTILE_FILTER,
     TARGET_NAMES,
-    DATA_PATH,
-    MODELS_DIR
 )
+from src.config_models import build_models, build_pipeline, build_vectorizers
+from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 
 SELECTED_EXPERIMENTS = [
-    # ("my_tfidf", "ridge_servings"),
-    # ("my_tfidf", "ridge"),
-    # ("manual_tfidf", "elasticnet_gd"),
+    ("my_tfidf", "ridge_servings"),
+    ("my_tfidf", "ridge"),
+    ("manual_tfidf", "elasticnet_gd"),
     ("tfidf", "elasticnet_gd"),
     ("my_tfidf", "elasticnet_gd"),
-    # ("my_tfidf", "random_forest"),
-    # ("my_tfidf", "lgbm"),          
-    # ("my_tfidf", "lgbm_servings"),   
-    # ("tfidf", "custom_nn"),  
-    # ("my_tfidf", "custom_nn"),  
-    # ("my_tfidf", "custom_adaboost"),
+    ("my_tfidf", "random_forest"),
+    ("my_tfidf", "lgbm"),          
+    ("my_tfidf", "lgbm_servings"),   
+    ("tfidf", "custom_nn"),  
+    ("my_tfidf", "custom_nn"),  
+    ("my_tfidf", "custom_adaboost"),
 
 
     

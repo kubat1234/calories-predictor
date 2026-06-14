@@ -1,22 +1,17 @@
-import numpy as np
 import importlib
 from collections import defaultdict
-from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases, Phraser
-import scipy.sparse as sp
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.utils.validation import check_is_fitted
-from scipy.sparse import csr_matrix
 
-from src.tokenize import add_ngrams, tokenize
-
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.pipeline import FeatureUnion
-from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
+import scipy.sparse as sp
+from gensim.models import Word2Vec
+from gensim.models.phrases import Phraser, Phrases
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import FeatureUnion
+from sklearn.utils.validation import check_is_fitted
+
+from src.tokenize import tokenize
+
 
 class MyTfidfVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self, max_df=1.0, min_df=1, max_features=None):

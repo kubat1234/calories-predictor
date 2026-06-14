@@ -3,17 +3,14 @@ from time import perf_counter
 
 import numpy as np
 from sklearn.compose import TransformedTargetRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from src.features import ManualTfidfVectorizer, Word2VecVectorizer
 
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 from src.tokenize import tokenize
-
 
 TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
 MAX_ROWS = 120_000

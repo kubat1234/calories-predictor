@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_random_state
 
+
 class CustomNeuralNetworkRegressor(BaseEstimator, RegressorMixin):
     def __init__(self, layer_sizes, epochs=5, learning_rate=0.001, batch_size=64, print_every=1, random_state=None):
         self.layer_sizes = layer_sizes

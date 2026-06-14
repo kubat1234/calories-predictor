@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.base import BaseEstimator, RegressorMixin
 
+
 class ElasticNetGDRegressor(BaseEstimator, RegressorMixin):
     def __init__(
         self,

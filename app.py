@@ -1,14 +1,12 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import time
-
-import scipy.sparse as sp
-from sklearn.base import BaseEstimator, TransformerMixin
+from pathlib import Path
 
 import joblib
-
+import numpy as np
+import pandas as pd
+import scipy.sparse as sp
+import streamlit as st
+from sklearn.base import BaseEstimator, TransformerMixin
 
 TARGET_NAMES = ["calories", "fat", "carbohydrates", "protein"]
 MODELS_DIR = Path("saved/app")
@@ -72,7 +70,6 @@ def parse_prediction(prediction):
     if values.size >= len(TARGET_NAMES):
         return values[: len(TARGET_NAMES)]
 
-    # Dla starszych modeli jednowymiarowych wypelniamy tylko calories.
     padded = np.full(len(TARGET_NAMES), np.nan, dtype=np.float64)
     if values.size > 0:
         padded[0] = values[0]

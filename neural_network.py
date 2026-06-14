@@ -3,6 +3,7 @@ from collections import Counter
 from pathlib import Path
 from time import perf_counter
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -19,8 +20,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from src.config_constants import (
     DATA_PATH,
-    MAX_TRAIN_ROWS,
     MAX_TEST_ROWS,
+    MAX_TRAIN_ROWS,
     MODELS_DIR,
     PERCENTILE_FILTER,
     RANDOM_SEED,
@@ -28,9 +29,6 @@ from src.config_constants import (
 )
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 from src.tokenize import tokenize
-
-import matplotlib.pyplot as plt
-
 
 PAD_TOKEN_ID = 0
 UNK_TOKEN_ID = 1
