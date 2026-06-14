@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import Ridge
 
-from config import (
+from src.config_constants import (
     DATA_PATH,
     MAX_TRAIN_ROWS,
     PERCENTILE_FILTER,

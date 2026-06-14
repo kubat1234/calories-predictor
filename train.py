@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
-from config_models import build_models, build_vectorizers, build_pipeline
+from src.config_models import build_models, build_vectorizers, build_pipeline
 
-from config_constants import (
+from src.config_constants import (
     MAX_TRAIN_ROWS,
     PERCENTILE_FILTER,
     TARGET_NAMES,
