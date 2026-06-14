@@ -131,7 +131,7 @@ def build_models():
             "factory": lambda: TransformedTargetRegressor(
                 regressor=CustomNeuralNetworkRegressor(
                     layer_sizes=[64, 32, 1],
-                    epochs=40,
+                    epochs=20,
                     learning_rate=0.01,
                     batch_size=64,
                     random_state=RANDOM_SEED
