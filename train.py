@@ -20,7 +20,7 @@ from config_constants import (
 SELECTED_EXPERIMENTS = [
     # ("my_tfidf", "ridge_servings"),
     # ("my_tfidf", "ridge"),
-    ("manual_tfidf", "elasticnet_gd"),
+    # ("manual_tfidf", "elasticnet_gd"),
     ("tfidf", "elasticnet_gd"),
     ("my_tfidf", "elasticnet_gd"),
     # ("my_tfidf", "random_forest"),
