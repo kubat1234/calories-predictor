@@ -23,7 +23,7 @@ FIELDS = [
 	("protein",       "Białko (g)",                  "protein"),
 ]
 
-PERCENTILE_CLIP = 99
+PERCENTILE_CLIP = 98
 ZERO_SAMPLE_LIMIT = 5
 
 
@@ -71,30 +71,25 @@ def plot_distribution(
 	axes[1].legend()
 
 	plt.tight_layout(rect=(0, 0, 1, 0.95))
-	out_path = out_dir / f"{filename}.png"
+	out_path = out_dir / f"{filename}_{PERCENTILE_CLIP}.png"
 	plt.savefig(out_path, dpi=150)
 	plt.close(fig)
 	print(f"  Wykres zapisany: {out_path}")
 
 
-def print_zero_value_recipes(rows: list[dict[str, str]], sample_limit: int = ZERO_SAMPLE_LIMIT) -> None:
-	print(f"\n{'═' * 60}")
-	print("  Podejrzane rekordy z zerowymi wartościami")
-	print(f"{'═' * 60}")
+def print_sample(rows: list[dict[str, str]], sample_limit: int = ZERO_SAMPLE_LIMIT) -> None:
+	print(f"\n{'═' * 80}")
+	print("  Przykładowe przepisy z informacją o wartościach odżywczych")
+	print(f"{'═' * 80}")
 
-	for field, label, _ in FIELDS:
-		zero_rows = [row for row in rows if float(row[field]) == 0.0]
-		print(f"\n{label}: znaleziono {len(zero_rows)} rekordów z wartością 0")
+	for idx, row in enumerate(rows[:sample_limit], start=1):
+		instructions_preview = " ".join(row["instructions"].split())
+		# instructions_preview = instructions_preview[:200] + ("..." if len(instructions_preview) > 200 else "")
 
-		if not zero_rows:
-			continue
-
-		for idx, row in enumerate(zero_rows[:sample_limit], start=1):
-			instructions_preview = " ".join(row["instructions"].split())
-			instructions_preview = instructions_preview[:220] + ("..." if len(instructions_preview) > 220 else "")
-
-			print(f"  [{idx}] calories={float(row['calories']):.2f}, fat={float(row['fat']):.2f}, carbohydrates={float(row['carbohydrates']):.2f}, protein={float(row['protein']):.2f}")
-			print(f"      Instrukcje: {instructions_preview}")
+		print(f"\n  [{idx}]")
+		print(f"      Porcji: {row.get('servings', 'N/A')}")
+		print(f"      Kalorie: {float(row['calories']):.2f} kcal | Tłuszcz: {float(row['fat']):.2f}g | Węglowodany: {float(row['carbohydrates']):.2f}g | Białko: {float(row['protein']):.2f}g")
+		print(f"      Instrukcje: {instructions_preview}")
 
 
 def main() -> None:
@@ -111,9 +106,15 @@ def main() -> None:
 		print_stats(label, values)
 		plot_distribution(values, label, filename, img_dir)
 
-	print_zero_value_recipes(rows)
+	print_sample(rows)
+
+	instructions_lengths = [len(row["instructions"]) for row in rows]
+	avg_length = np.mean(instructions_lengths)
+	print(f"\nŚrednia długość instrukcji: {avg_length:.2f} znaków")
 
 	print(f"\nGotowe. Wykresy zapisane w folderze: {img_dir.resolve()}")
+
+
 
 
 if __name__ == "__main__":
