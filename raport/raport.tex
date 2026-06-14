@@ -427,7 +427,7 @@ W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTarg
 \begin{itemize}
     \item Na podstawie naszych obserwacji najlepszym wektoryzerem jest generalnie TF-IDF. Wyniki pomiędzy naszą implementacją, implementacją ze scikit-learn oraz połączenie z manualem dawały różne wyniki dla różnych modeli, zatem nie możemy określić, który z nich jest absolutnie najlepszy. 
     \item Analizując proste modele, możemy zauważyć, że są one w stanie dość dobrze przewidzieć wynik ($R^2$ około 0.25). Jednak aby uzyskać lepsze wyniki, potrzebujemy dość złożonych modeli jak LGBM z 1000 drzew, lub dużej sieci neuronowej. 
-    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, następny była sieć neuronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
+    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, następna była sieć neuronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
     \item Każdy model najlepiej radził sobie z szacowaniem ilości białek, prawdopodobnie dlatego, że białko pochodzi ze ściśle określonych produktów (np. kurczak albo mleko), a pozostałe rzeczy występują praktycznie wszędzie. 
     \item Biorąc pod uwagę trudność przewidywania kalorii, uznajemy nasze wyniki za zadowalające.
 \end{itemize}    
