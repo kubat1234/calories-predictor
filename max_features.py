@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from src.get_data import filter_rows_by_nutrient_percentile, load_training_rows
 from config_models import build_models, build_vectorizers, build_pipeline
 
-from config_constants import (MAX_TRAIN_ROWS, PERCENTILE_FILTER, RANDOM_SEED, TEST_SIZE)
+from src.config_constants import (MAX_TRAIN_ROWS, PERCENTILE_FILTER, RANDOM_SEED, TEST_SIZE)
 
 MAX_ROWS = 60000
 PERCENTILE_FILTER = PERCENTILE_FILTER
