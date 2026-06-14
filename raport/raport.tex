@@ -26,12 +26,12 @@
 \section*{Wstęp}
 W ramach naszego projektu pracujemy na zbiorze danych \href{https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews}{Food.com Recipes and Reviews} dostępnym w serwisie Kaggle. Zawiera on przepisy kulinarne składające się z opisu dania, spisu składników, instrukcji przygotowania, wartości odżywczych (w tym liczby kalorii, tłuszczów, węglowodanów i białek), a także liczby porcji. 
 
-W naszych modelach jako cechy (argumenty wejściowe) rozważamy przede wszystkim same instrukcje przygotowania potrawy, jednak przetestujemy również warianty modeli rozszerzone o dodatkową cechę, jaką jest liczba porcji. Analizując instrukcje tekstowe, pomijamy wartości liczbowe, rozważamy wyłącznie słowa występujące w tekście. Zadaniem modeli jest predykcja liczby kalorii, tłuszczów, węglowodanów oraz białek. 
+\noindent W naszych modelach jako cechy (argumenty wejściowe) rozważamy przede wszystkim same instrukcje przygotowania potrawy, jednak przetestujemy również warianty modeli rozszerzone o dodatkową cechę, jaką jest liczba porcji. Analizując instrukcje tekstowe, pomijamy wartości liczbowe, rozważamy wyłącznie słowa występujące w tekście. Zadaniem modeli jest predykcja liczby kalorii, tłuszczów, węglowodanów oraz białek. 
 
-Z uwagi na specyfikę problemu, gdzie dla modelu sformułowania typu „5g masła” oraz „100g masła” będą zinterpretowane dokładnie tak samo, nie spodziewamy się ekstremalnie wysokich wyników metryk jakościowych. Można jednak założyć, że część istotnych informacji uda się wywnioskować, ponieważ przepisy zamieszczane w Internecie są na ogół przygotowywane dla skończonej i powtarzalnej liczby osób (najczęściej 2--4). Z tego względu rozbieżność w rzeczywistych masach składników nie powinna być drastycznie wielka.
+\noindent Z uwagi na specyfikę problemu, gdzie dla modelu sformułowania typu „5g masła” oraz „100g masła” będą zinterpretowane dokładnie tak samo, nie spodziewamy się ekstremalnie wysokich wyników metryk jakościowych. Można jednak założyć, że część istotnych informacji uda się wywnioskować, ponieważ przepisy zamieszczane w Internecie są na ogół przygotowywane dla skończonej i powtarzalnej liczby osób (najczęściej 2--4). Z tego względu rozbieżność w rzeczywistych masach składników nie powinna być drastycznie wielka.
 
 \section*{Analiza danych}
-W pliku \texttt{src/analyze\_data.py} przeprowadzamy analize danych. Nasz dataset składał się z wielu kolumn, my skupiliśmy się na przewidywaniu kalorii, węglowodanów, białka i tłuszczu na podstawie tekstowych instrukcji oraz liczby porcji (tylko niektóre modele). \\
+W pliku \texttt{src/analyze\_data.py} przeprowadzamy analizę danych. Nasz dataset składał się z wielu kolumn, my skupiliśmy się na przewidywaniu kalorii, węglowodanów, białka i tłuszczu na podstawie tekstowych instrukcji oraz liczby porcji (tylko niektóre modele). \\
 
 \noindent Przykładowy wiersz z datasetu: \\
 
@@ -44,7 +44,7 @@ Porcje: 4\quad Kalorie: 203.90 kcal\quad Tłuszcz: 7.30g\quad Węglowodany: 31.9
 Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into a large pan.", "Add cherry liqueur and bring to a boil, stirring constantly.", "Scoop ice cream into sundae dishes.", "Top with hot cherries.")
 \endgroup \\
 
-\noindent Przy wczytywaniu danych pomijałem te które mają \texttt{NA} (brak danych) w conajmniej jednej z kolumn oraz te, które mają 0 we wszystkich kolumnach z wartościami liczbowymi (te wiersze wydawały się być wierszami z brakującymi danymi, ponieważ przepisy wyglądały normalnie).\\
+\noindent Przy wczytywaniu danych pomijałem te, które mają \texttt{NA} (brak danych) w co najmniej jednej z kolumn oraz te, które mają 0 we wszystkich kolumnach z wartościami liczbowymi (te wiersze wydawały się być wierszami z brakującymi danymi, ponieważ przepisy wyglądały normalnie).\\
 
 \begin{table}[htbp]
     \centering
@@ -62,7 +62,7 @@ Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into 
     \label{tab:statystyki_odzywcze_pion}
 \end{table}
 
-\noindent W datasecie występują wartości odstające, które mogą znacząco wpłynąć na wyniki analizy. W związku z tym zdecydowaliśmy się na obcięcie wartości do 98. percentyla. Poniżej znajdują się wykresy rozkładu dla każdej z analizowanych cech po obcięciu wartości odstających. Wykresy mają rozkłady skośne (im większe wartości, tym mniej danych), więc po prawej znajdują wykresy po zlogarytmowaniu, które przypominają rozkład normalny, co jest korzystne dla wielu modeli.
+\noindent W datasecie występują wartości odstające, które mogą znacząco wpłynąć na wyniki analizy. W związku z tym zdecydowaliśmy się na obcięcie wartości do 98. percentyla. Poniżej znajdują się wykresy rozkładu dla każdej z analizowanych cech po obcięciu wartości odstających. Wykresy mają rozkłady skośne (im większe wartości, tym mniej danych), więc po prawej znajdują się wykresy po zlogarytmowaniu, które przypominają rozkład normalny, co jest korzystne dla wielu modeli.
 
 \begin{figure}[htbp]
     \centering
@@ -117,21 +117,21 @@ Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into 
         Każde słowo jest reprezentowane jako wektor w przestrzeni wielowymiarowej, a dokument jest reprezentowany jako średnia wektorów słów w nim zawartych. Do wyliczenia wektorów trenujemy algorytm Word2Vec na naszym korpusie instrukcji.
 \end{itemize}
 
-    \noindent W Count i TF-IDF odrzucamy słowa, które występują w małej liczbie przepisów np. w mniej niż 3 przepisach oraz takie, które występują w bardzo dużej liczbie przepisów np. w więcej niż 90\% przepisów. Wybieramy też stałą liczbę cech (np. 5000) i bierzemy tylko te najczęściej występujące (Aby uniknąć zbyt dużej liczby cech, które mogą spowolnić działanie modelu). \\
-    W tych 2 metodach używamy też bigramów (par słów występujących obok siebie). 
+\noindent W Count i TF-IDF odrzucamy słowa, które występują w małej liczbie przepisów, np. w mniej niż 3 przepisach, oraz takie, które występują w bardzo dużej liczbie przepisów, np. w więcej niż 90\% przepisów. Wybieramy też stałą liczbę cech (np. 5000) i bierzemy tylko te najczęściej występujące (aby uniknąć zbyt dużej liczby cech, które mogą spowolnić działanie modelu). \\
+\noindent W tych 2 metodach używamy też bigramów (par słów występujących obok siebie). 
 
 \subsection*{Porównanie metod wektoryzacji}
 
 \noindent W pliku \texttt{compare\_vectorizers.py} porównujemy różne metody wektoryzacji. \\
 
 \noindent Metody te porównujemy używając prostego modelu regresji liniowej z regularyzacją L2 (Ridge) i porównując średni błąd bezwzględny (MAE), pierwiastek średniego błędu kwadratowego (RMSE) i współczynnik determinacji ($R^2$). \\
-($R^2$ mówi nam, jak model jest lepszy niż prosty model, który zawsze przewiduje średnią wartość. $R^2$ = 0 oznacza, że model jest tak dobry jak ten prosty model, a $R^2$ = 1 oznacza idealne dopasowanie do danych).\\
+\noindent ($R^2$ mówi nam, o ile model jest lepszy niż prosty model, który zawsze przewiduje średnią wartość. $R^2$ = 0 oznacza, że model jest tak dobry jak ten prosty model, a $R^2$ = 1 oznacza idealne dopasowanie do danych).\\
 
-\noindent Ponieważ wykresy rozkładu cech są skośne to modele przewidują logarytm wartości, a następnie bierzemy wykładnik z przewidywań, aby otrzymać przewidywane wartości. \\
+\noindent Ponieważ wykresy rozkładu cech są skośne, to modele przewidują logarytm wartości, a następnie bierzemy wykładnik z przewidywań, aby otrzymać przewidywane wartości. \\
 
 \begin{table}[htbp]
     \centering
-    \caption{Wyniki ewaluacji modeli na zbiorze Walidacyjnym}
+    \caption{Wyniki ewaluacji modeli na zbiorze walidacyjnym}
     \label{tab:wyniki_wektoryzacji_val}
     \renewcommand{\arraystretch}{1.2}
     \begin{tabular}{|l|l|r|r|r|}
@@ -162,17 +162,17 @@ Instrukcje: c("Pour cherry pie filling, cinnamon, cloves, and orange juice into 
 
 \noindent Proste zliczanie radzi sobie bardzo słabo, nawet gorzej od modelu, który zawsze przewiduje średnią wartość. TF-IDF daje znaczną poprawę, a dodanie cech manualnych daje jeszcze niewielką poprawę. Word2Vec radzi sobie gorzej niż TF-IDF, co może być spowodowane tym, że średnia wektorów słów może nie być najlepszym sposobem reprezentacji całego przepisu. \\ 
 
-\noindent Warto zauważyć że przewidywanie ilości białka jest łatwiejsze niż przewidywanie kalorii oraz pozostałych makroskładników.
+\noindent Warto zauważyć, że przewidywanie ilości białka jest łatwiejsze niż przewidywanie kalorii oraz pozostałych makroskładników.
 
 \section*{Założenia odnośnie modeli}
 Do treningu modeli wykorzystujemy zbiór składający się z $120\,000 - \epsilon$ wierszy, gdzie wartość $\epsilon$ wynika z procesu odfiltrowania niepoprawnych lub brakujących cech. Do testów rezerwujemy osobny podzbiór liczący $80\,000 - \epsilon$ wierszy. Przed podziałem dane zostały w pełni przetasowane. 
 
-Do generowania wykresów (zarówno krzywych uczenia, jak i analizy wpływu maksymalnej liczby cech wyekstrahowanych z tekstu) wykorzystujemy zbiór o wielkości $60\,000 - \epsilon$ wierszy, z którego 20\% wydzielamy jako zbiór walidacyjny. Krzywe uczenia obliczamy odpowiednio wartościach około (5\%, 19\%, 32\%, 46\%, 59\% 72\%, 86\%, 100\%) rozwarzanych danych, a krzywe ilości cech na wartościach (10, 50, 100, 300, 600, 1000, 1500, 2000, 4000) cech. Do wektoryzacji tekstu wykorzystujemy metodę TF-IDF – zarówno w wersji z biblioteki \texttt{scikit-learn}, jak i w ramach własnej implementacji. Wstępne testy wykazały, że podejście to radzi sobie znacznie lepiej niż alternatywne metody reprezentacji tekstowej. Rozważamy również wariant „manual TF-IDF”. Główną metryką, na podstawie której oceniamy i porównujemy dopasowanie modeli, jest współczynnik determinacji $R^2$.
+\noindent Do generowania wykresów (zarówno krzywych uczenia, jak i analizy wpływu maksymalnej liczby cech wyekstrahowanych z tekstu) wykorzystujemy zbiór o wielkości $60\,000 - \epsilon$ wierszy, z którego 20\% wydzielamy jako zbiór walidacyjny. Krzywe uczenia obliczamy odpowiednio dla wartości około (5\%, 19\%, 32\%, 46\%, 59\% 72\%, 86\%, 100\%) rozważanych danych, a krzywe ilości cech na wartościach (10, 50, 100, 300, 600, 1000, 1500, 2000, 4000) cech. Do wektoryzacji tekstu wykorzystujemy metodę TF-IDF – zarówno w wersji z biblioteki \texttt{scikit-learn}, jak i w ramach własnej implementacji. Wstępne testy wykazały, że podejście to radzi sobie znacznie lepiej niż alternatywne metody reprezentacji tekstowej. Rozważamy również wariant „manual TF-IDF”. Główną metryką, na podstawie której oceniamy i porównujemy dopasowanie modeli, jest współczynnik determinacji $R^2$.
 
 \section*{Rozważane modele}
 
 \subsection*{Dumb regressor}
-W pierwszej kolejności rozważyliśmy model referencyjny, który zawsze zwraca wartość średnią z danych treningowych. Pozwali ocenić realny zysk z zastosowania bardziej zaawansowanych algorytmów.
+W pierwszej kolejności rozważyliśmy model referencyjny, który zawsze zwraca wartość średnią z danych treningowych. Pozwoli to ocenić realny zysk z zastosowania bardziej zaawansowanych algorytmów.
 
 \begin{figure}[H]
     \centering
@@ -181,7 +181,7 @@ W pierwszej kolejności rozważyliśmy model referencyjny, który zawsze zwraca 
     \label{fig:tfidf_dumb}
 \end{figure}
 
-Widzimy jak wyglądają błędy i dokładność $R^2$, która szczególnie będzie nas intersować. 
+\noindent Widzimy, jak wyglądają błędy i dokładność $R^2$, która szczególnie będzie nas interesować. 
 
 \subsection*{Elastic net gradient descent regressor}
 Pierwszym naszym modelem jest regresja liniowa z regularyzacją Elastic Net, zaimplementowana przy pomocy algorytmu stochastycznego spadku gradientu. Z racji nieróżniczkowalności składnika $L_1$ w punkcie zero, w implementacji zastosowaliśmy technikę \textit{soft thresholding}. Jeżeli nasz model przestaje się uczyć, wprowadziliśmy mechanizm dynamicznego zmniejszania współczynnika uczenia (\textit{learning rate}) w celu precyzyjniejszego zlokalizowania minimum globalnego. Jeśli pomimo tego zabiegu wynik na zbiorze walidacyjnym nie ulega poprawie, proces uczenia jest przerywany.
@@ -195,7 +195,7 @@ Pierwszym naszym modelem jest regresja liniowa z regularyzacją Elastic Net, zai
     \label{fig:elasticnet_gd_comparison}
 \end{figure}
 
-Widzimy, że model działą dość dobrze jak na problem z jakim się mierzymy. Na naszym tfidf otrzymujemy nieco lepsze wyniki.
+\noindent Widzimy, że model działa dość dobrze jak na problem, z jakim się mierzymy. Na naszym TF-IDF otrzymujemy nieco lepsze wyniki.
 
 \begin{figure}[H]
     \centering
@@ -204,7 +204,7 @@ Widzimy, że model działą dość dobrze jak na problem z jakim się mierzymy. 
     \label{fig:max_features_elasticnet}
 \end{figure}
 
-Zależność od ilości cech wybranych z tekstu wygląda dość spodziewanie. W praktyce musimy wybrać tylko kilka najważnijszych słów aby określić kalorycznosć.
+\noindent Zależność od ilości cech wybranych z tekstu wygląda dość spodziewanie. W praktyce musimy wybrać tylko kilka najważniejszych słów, aby określić kaloryczność.
 
 \subsection*{Ridge}
 Dla porównania efektywności optymalizacji gradientowej wykorzystaliśmy model regresji grzbietowej z biblioteki \texttt{scikit-learn}.
@@ -240,9 +240,9 @@ Dla porównania efektywności optymalizacji gradientowej wykorzystaliśmy model 
     \end{minipage}
 \end{figure}
 
-Widizmy, że model ze scikit pordzaił sobie lepiej jednak, gorzej współpracuje z naszym wektoryzerm. Krzywa zależność ilości cech wygląda niemal identycznie. Natomiast krzywa uczenia na zbiorze treningowym bardzo łatwo się przeucza, jednak dośc szybko  
+\noindent Widzimy, że model ze scikit poradził sobie lepiej, jednak gorzej współpracuje z naszym wektoryzerem. Krzywa zależności ilości cech wygląda niemal identycznie. Natomiast model na małych porcjach danych bardzo łatwo się przeucza, jednak przy nieco większej procji już jest w porządku. 
 
-Zaimplementowaliśmy również modele bazujący na ręcznie przygotowanym wektorze cech (manual TF-IDF), oraz uwzględniające dodatkowo informację o liczbie porcji, co miało na celu zmniejszenie błędu wynikającego ze skalowalności przepisów.
+\noindent Zaimplementowaliśmy również modele bazujące na ręcznie przygotowanym wektorze cech (manual TF-IDF), oraz uwzględniające dodatkowo informację o liczbie porcji, co miało na celu zmniejszenie błędu wynikającego ze skalowalności przepisów.
 
 \begin{figure}[H]
     \centering
@@ -254,12 +254,11 @@ Zaimplementowaliśmy również modele bazujący na ręcznie przygotowanym wektor
     \label{fig:manual_tfidf_ridge}
 \end{figure}
 
-Możemy zauważyć, że dodanie manualnych cech poprawia model, jednak ilość porcji osłabia.
+\noindent Możemy zauważyć, że dodanie manualnych cech poprawia model, jednak ilość porcji go osłabia.
 
 \subsection*{Regresja z regularyzacją}
 
-
-\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczna regresję liniową z regularyzacją L2 (Ridge) oraz regrsję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametów regularyzacji. (Im więcej tym lepiej) \\
+\noindent W plikach \texttt{regularization\_heatmap.py} oraz \texttt{regularization\_plot.py} testujemy analityczną regresję liniową z regularyzacją L2 (Ridge) oraz regresję z siecią elastyczną (ElasticNet) z gradient descent. Poniżej znajdują się wyniki współczynnika determinacji ($R^2$) dla różnych wartości parametrów regularyzacji. (Im więcej, tym lepiej) \\
 
 \begin{figure}[H]
     \centering
@@ -275,13 +274,13 @@ Możemy zauważyć, że dodanie manualnych cech poprawia model, jednak ilość p
     \label{fig:ridge_regularization}
 \end{figure}
 
-\noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zalezności od zmiennej docelowej. \\
+\noindent W regresji Elastic Net najlepiej sprawdzają się małe wartości regularyzacji, a w regresji Ridge najlepiej sprawdzają się wartości 1 lub 10, w zależności od zmiennej docelowej. \\
 
-\noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokłądniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
+\noindent Wyniki regresji Ridge są nieco lepsze niż Elastic Net, prawdopodobnie dlatego, że rozwiązanie analityczne jest dokładniejsze niż gradient descent, który może nie znaleźć najlepszego rozwiązania. \\
 
 
 \subsection*{Neural net}
-Kolejnym rozważanym przez nas rozwiązaniem jest sieć neuronowa. Biorąc pod uwagę specyfikę oraz charakter zadania, struktura sieci nie musi być nadmiernie głęboka. Zdecydowaliśmy się na architekturę o dwóch warstwach ukrytych o wielkościach odpowiednio 64 i 32 neurony z funkcjami aktywacji ReLU. Model trenowaliśmy przez 20 epok z learning rate 0.1 oraz batchami wielkości 64. Parametry wdobraliśmy eksperymentalnie.
+Kolejnym rozważanym przez nas rozwiązaniem jest sieć neuronowa. Biorąc pod uwagę specyfikę oraz charakter zadania, struktura sieci nie musi być nadmiernie głęboka. Zdecydowaliśmy się na architekturę o dwóch warstwach ukrytych o wielkości odpowiednio 64 i 32 neuronów z funkcjami aktywacji ReLU. Model trenowaliśmy przez 20 epok z learning rate 0.1 oraz batchami wielkości 64. Parametry dobraliśmy eksperymentalnie.
 
 \begin{figure}[H]
     \centering
@@ -290,7 +289,9 @@ Kolejnym rozważanym przez nas rozwiązaniem jest sieć neuronowa. Biorąc pod u
     \includegraphics[width=0.8\textwidth]{../img/stats/my_tfidf_custom_nn.png}
     \label{fig:nn_comparison}
 \end{figure}
-Wyniki są nieco lepsze od naszego modelu regresji liniowej, jednak i tak słabsze od gotowych modeli.
+
+\noindent Wyniki są nieco lepsze od naszego modelu regresji liniowej, jednak i tak słabsze od gotowych modeli.
+
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -306,11 +307,12 @@ Wyniki są nieco lepsze od naszego modelu regresji liniowej, jednak i tak słabs
     \end{minipage}
 \end{figure}
 
-Analizując krzywą uczenia możemy dojść do wniosku, że model wpada w lokalne minima. Próbowaliśmy to naprawić za pomocą optymalizajci adam, jednak nie udało nam się znaleźć parametrów, dla których model zwróciłby dodatnie $R^2$.
-Wniosek jest taki, że zdecydownaie można poprawić ten model, ale sam wynik nie jest zły.
+\noindent Analizując krzywą uczenia, możemy dojść do wniosku, że model wpada w lokalne minima. Próbowaliśmy to naprawić za pomocą optymalizacji Adam, jednak nie udało nam się znaleźć parametrów, dla których model zwróciłby dodatnie $R^2$.
+Wniosek jest taki, że zdecydowanie można poprawić ten model, ale sam wynik nie jest zły.
 
 \subsection*{Random Forest}
 Model random forest trenowaliśmy z 10 drzewami o głębokości 15. 
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{../img/stats/my_tfidf_random_forest.png}
@@ -332,15 +334,12 @@ Model random forest trenowaliśmy z 10 drzewami o głębokości 15.
     \end{minipage}
 \end{figure}
 
-Mimo tak małej liczby drzew, model uzykuje dość sensowyny wynik ale widać na krzywych, że bardzo szybko się wypłaszczają co może świadczyć o prostocie modelu. 
+\noindent Mimo tak małej liczby drzew, model uzyskuje dość sensowny wynik, ale widać na krzywych, że bardzo szybko się wypłaszczają, co może świadczyć o prostocie modelu. 
 
 \subsection*{Light gradient boosted machine}
-Jest to model, który korzysta z boostingu, gdzie jako słabe estymatory wykorzystuje drzewa decyzyjne. Z najważniejszych optymalizaji to ograniczenie nie na głębokość, lecz na liczbę liści w drzewie, dzielenie przedziału wartości ciągłych na bloki w preprocesingu, tak aby rozważać tylko ograniczoną ilość podziałow, pomijanie części obserwacji o małych wartościach gradientu, skupiając się jedynie na wartościach trudnych do sklasyfikowania.\\
+Jest to model, który korzysta z boostingu, gdzie jako słabe estymatory wykorzystuje drzewa decyzyjne. Z najważniejszych optymalizacji to ograniczenie nie na głębokość, lecz na liczbę liści w drzewie, dzielenie przedziału wartości ciągłych na bloki w preprocesingu, tak aby rozważać tylko ograniczoną ilość podziałów, pomijanie części obserwacji o małych wartościach gradientu, skupiając się jedynie na wartościach trudnych do sklasyfikowania.\\
 
-W kazdym momencie do drzewa dochodzi dokładnie jeden podział, który najbardziej poprawia wynik, jest to podatne na przeuczenie dlatego mamy stosunkowo niskie ograniczenie na ilość liści. Algorytm korzysta z wielu wątków, podczas rozważania podziałów liści, przez co jest jeszcze szybszy. Dzięki temu mogliśmy wytrenować model z 1000 drzew. Każde drzewo miało 31 liści. 
-
-
-
+\noindent W każdym momencie do drzewa dochodzi dokładnie jeden podział, który najbardziej poprawia wynik. Jest to podatne na przeuczenie, dlatego mamy stosunkowo niskie ograniczenie na ilość liści. Algorytm korzysta z wielu wątków podczas rozważania podziałów liści, przez co jest jeszcze szybszy. Dzięki temu mogliśmy wytrenować model z 1000 drzew. Każde drzewo miało 31 liści. 
 
 \begin{figure}[H]
     \centering
@@ -349,12 +348,15 @@ W kazdym momencie do drzewa dochodzi dokładnie jeden podział, który najbardzi
     \includegraphics[width=0.8\textwidth]{../img/stats/tfidf_lgbm.png}
     \label{fig:nn_comparison}
 \end{figure}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{../img/stats/manual_tfidf_lgbm.png}
     \label{fig:nn_comparison}
 \end{figure}
-W tym przypadku nasz wektoryzor delikatnie pogarsza wynik, natomiast cechy manualne polepszają. 
+
+\noindent W tym przypadku nasz wektoryzer delikatnie pogarsza wynik, natomiast cechy manualne polepszają. 
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{../img/stats/tfidf_lgbm_servings.png}
@@ -363,7 +365,7 @@ W tym przypadku nasz wektoryzor delikatnie pogarsza wynik, natomiast cechy manua
     \label{fig:nn_comparison}
 \end{figure}
 
-Dodając do tego ilości porcji uzyskujemy najlepszy wynik jaki udało nam się uzyskać. 
+\noindent Dodając do tego ilości porcji, uzyskujemy najlepszy wynik, jaki udało nam się uzyskać. 
 
 \begin{figure}[H]
     \centering
@@ -380,18 +382,22 @@ Dodając do tego ilości porcji uzyskujemy najlepszy wynik jaki udało nam się 
     \end{minipage}
 \end{figure}
 
-Analizując krzywą uczenia możemy zobaczyć, że wypłaszcza się ona znacznie wolniej, niż w przypadku krzywej modelu Ridge. Również krzywa ilości cech jest mniej wypłaszczona. Przepuszczalnie wynika to z tego, że model LGBM jest bardziej skomplikowany i uczy się wolniej jednak jest w stanie nauczyć się więcej. Prawdopodbnie przy większych zasobach danych i mocy obliczeniowej byli byśmy w stanie wytrenować go jeszcze lepiej.
+\noindent Analizując krzywą uczenia, możemy zobaczyć, że wypłaszcza się ona znacznie wolniej niż w przypadku krzywej modelu Ridge. Również krzywa ilości cech jest mniej wypłaszczona. Przypuszczalnie wynika to z tego, że model LGBM jest bardziej skomplikowany i uczy się wolniej, jednak jest w stanie nauczyć się więcej. Prawdopodobnie przy większych zasobach danych i mocy obliczeniowej bylibyśmy w stanie wytrenować go jeszcze lepiej.
 
 \subsection*{Custom AdaBoost Regressor}
-Widząc wyniki LGBM, chcieliśmy napisać coś podobnego. Bez tylu optymalizacji, ale żeby było nasze. Udało nam się to napisać z ograniczeniem na liczbę głębokości. Jednak model z grubsza nie działa, a przynajmniej nie działa współpracując z mocą obliczeniową jaką posiadamy. Próbując wytrenować model z 40 drzewami, zajęło to nam prawie 4.5h. A niestety model nic nie przwidywał. Dodanie większej ilości drzew mogło by pomóc, jednak nie byli byśmy w stanie tego wytrenować.
+Widząc wyniki LGBM, chcieliśmy napisać coś podobnego. Bez tylu optymalizacji, ale żeby było nasze. Udało nam się to napisać z ograniczeniem na głębokość. Jednak model z grubsza nie działa, a przynajmniej nie działa współpracując z mocą obliczeniową, jaką posiadamy. Próbując wytrenować model z 40 drzewami, zajęło to nam prawie 4.5h. A niestety model nic nie przewidywał. Dodanie większej ilości drzew mogłoby pomóc, jednak nie bylibyśmy w stanie tego wytrenować.
 
 \subsection*{Sieć Neuronowa}
 
-W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTargetRecipeRegressor} z biblioteki PyTorch, która jest w stanie przewidywać jednocześnie wszystkie 4 zmienne docelowe. Sieć ta składa się z warstwy embedding (która zamienia słowa na wektory), average pooling (która uśrednia wektory słów, aby umożliwić trenowanie sieci na danych o różnej długości), oraz kilku warstw liniowych z funkcją aktywacji ReLU. \\
-Aby zapobiec overfittingowi, używamy dropoutu (losowe wyłączanie części neuronów podczas treningu). \\
-Używamy optymalizatora AdamW, który jest rozszerzeniem optymalizatora Adam o regularyzacje. \\ 
-Poniżej tabelka z wynikami, widać że sieć neuronowa radzi sobie dosyć dobrze, nalpiej przewiduje ilość białka jak inne modele. \\
-Poniżej znajduje się też wykres strat w zależności od epoki. Widać że po paru epokach loss na zbiorze walidacyjnym zaczyna rosnąć, co oznacza że sieć zaczyna się przeuczać. Nawet wysoki wspolczynnik dropout i regularyzacje nie pomogły w pełni zapobiec overfittingowi. \\
+W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTargetRecipeRegressor} z biblioteki PyTorch, która jest w stanie przewidywać jednocześnie wszystkie 4 zmienne docelowe. Sieć ta składa się z warstwy embedding (która zamienia słowa na wektory), average pooling (która uśrednia wektory słów, aby umożliwić trenowanie sieci na danych o różnej długości) oraz kilku warstw liniowych z funkcją aktywacji ReLU. \\
+
+\noindent Aby zapobiec overfittingowi, używamy dropoutu (losowe wyłączanie części neuronów podczas treningu). \\
+
+\noindent Używamy optymalizatora AdamW, który jest rozszerzeniem optymalizatora Adam o regularyzacje. \\ 
+
+\noindent Poniżej tabelka z wynikami. Widać, że sieć neuronowa radzi sobie dosyć dobrze, najlepiej przewiduje ilość białka, tak jak inne modele. \\
+
+\noindent Poniżej znajduje się też wykres strat w zależności od epoki. Widać, że po paru epokach loss na zbiorze walidacyjnym zaczyna rosnąć, co oznacza, że sieć zaczyna się przeuczać. Nawet wysoki współczynnik dropout i regularyzacje nie pomogły w pełni zapobiec overfittingowi. \\
 
 \begin{table}[htbp]
     \centering
@@ -418,13 +424,11 @@ Poniżej znajduje się też wykres strat w zależności od epoki. Widać że po 
 
 \section*{Podsumowanie}
 \begin{itemize}
-    \item Na podstawie naszych obserwacji najlepszym vectorizerem jest generalnie TF-IDF. Wyniki pomiędzy naszą implementacją, implemnetacją ze scikit learn oraz połączenie z manualem dawało różne wyniki dla różnych modeli, zatem nie możemy określić który z nich jest najlepszy. 
-    \item Analizując proste modele, możemy zauwarzyć, że są one w stanie dość dobrze przewidzieć wynik ($R^2$ około 0.25). Jednak aby uzyskać lepsze wyniki, potrzebujemy dość słożonych modeli jak LGBM z 1000 drzew, lub duża sieć nauronowa. 
-    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, nsęþny była sieć nauronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
-    \item Każdy model najlpiej radził sobie z szcowaniem ilości białek, prawdopdbnie dlatego, że białko pochodzi ze ściśle określonych produktów (np. kuraczak albo mleko), a pozostałe rzeczy występują praktycznie wszędzie. 
-    \item Biorąc pod uwagę trudność przwidywania kalorii, uznajemny nasze wyniki za zadowalające.
+    \item Na podstawie naszych obserwacji najlepszym wektoryzerem jest generalnie TF-IDF. Wyniki pomiędzy naszą implementacją, implementacją ze scikit-learn oraz połączenie z manualem dawały różne wyniki dla różnych modeli, zatem nie możemy określić, który z nich jest absolutnie najlepszy. 
+    \item Analizując proste modele, możemy zauważyć, że są one w stanie dość dobrze przewidzieć wynik ($R^2$ około 0.25). Jednak aby uzyskać lepsze wyniki, potrzebujemy dość złożonych modeli jak LGBM z 1000 drzew, lub dużej sieci neuronowej. 
+    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, następny była sieć neuronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
+    \item Każdy model najlepiej radził sobie z szacowaniem ilości białek, prawdopodobnie dlatego, że białko pochodzi ze ściśle określonych produktów (np. kurczak albo mleko), a pozostałe rzeczy występują praktycznie wszędzie. 
+    \item Biorąc pod uwagę trudność przewidywania kalorii, uznajemy nasze wyniki za zadowalające.
 \end{itemize}    
 
-
-
-\end{document} 
+\end{document}
