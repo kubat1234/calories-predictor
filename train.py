@@ -26,7 +26,7 @@ SELECTED_EXPERIMENTS = [
     # ("my_tfidf", "lgbm_servings"),   
     ("tfidf", "custom_nn"),  
     ("my_tfidf", "custom_nn"),  
-    ("my_tfidf", "custom_adaboost"),
+    # ("my_tfidf", "custom_adaboost"),
 
 
     

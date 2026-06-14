@@ -1,6 +1,7 @@
 vectorizer,model,max_features,r2_score
-tfidf,custom_nn,10,-0.046710
-tfidf,custom_nn,50,0.064869
-tfidf,custom_nn,100,0.087897
-tfidf,custom_nn,300,0.032771
-tfidf,custom_nn,600,-0.242361
+tfidf,custom_nn,10,-0.112247
+tfidf,custom_nn,50,-0.017046
+tfidf,custom_nn,100,-0.073439
+tfidf,custom_nn,300,0.186703
+tfidf,custom_nn,600,0.226939
+tfidf,custom_nn,1000,0.210116

@@ -99,18 +99,6 @@ def build_models():
             "supports_multioutput": False,
             "uses_servings": False,
         },
-        "mlp": {
-            "factory": lambda: MLPRegressor(
-                hidden_layer_sizes=(100,),
-                activation="relu",
-                solver="adam",
-                max_iter=200,
-                random_state=RANDOM_SEED, 
-            ),
-            "requires_dense": True,
-            "supports_multioutput": True,
-            "uses_servings": False,
-        },
         "lgbm": {
             "factory": make_lgbm,
             "requires_dense": False,
@@ -142,17 +130,17 @@ def build_models():
         "custom_nn": {
             "factory": lambda: TransformedTargetRegressor(
                 regressor=CustomNeuralNetworkRegressor(
-                    layer_sizes=[64, 32, 1],  
-                    epochs=60,
-                    learning_rate=0.001,
+                    layer_sizes=[64, 32, 1],
+                    epochs=40,
+                    learning_rate=0.01,
                     batch_size=64,
-                    random_state=RANDOM_SEED,
+                    random_state=RANDOM_SEED
                 ),
                 func=np.log1p,
                 inverse_func=np.expm1,
             ),
-            "requires_dense": True,     
-            "supports_multioutput": False,  
+            "requires_dense": True,
+            "supports_multioutput": False,
             "uses_servings": False,
         }
     }
