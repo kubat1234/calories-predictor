@@ -23,8 +23,8 @@
 \begin{document}
 \maketitle
 
+\noindent Nasz projekt znajduje się w repozytorium: \href{https://github.com/kubat1234/calories-predictor}{github.com/kubat1234/calories-predictor}.
 \section*{Wstęp}
-Nasz projekt znajduje się w repozytorium: \href{https://github.com/kubat1234/calories-predictor}{github.com/kubat1234/calories-predictor}.
 W ramach naszego projektu pracujemy na zbiorze danych \href{https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews}{Food.com Recipes and Reviews} dostępnym w serwisie Kaggle. Zawiera on przepisy kulinarne składające się z opisu dania, spisu składników, instrukcji przygotowania, wartości odżywczych (w tym liczby kalorii, tłuszczów, węglowodanów i białek), a także liczby porcji. 
 
 \noindent W naszych modelach jako cechy (argumenty wejściowe) rozważamy przede wszystkim same instrukcje przygotowania potrawy, jednak przetestujemy również warianty modeli rozszerzone o dodatkową cechę, jaką jest liczba porcji. Analizując instrukcje tekstowe, pomijamy wartości liczbowe, rozważamy wyłącznie słowa występujące w tekście. Zadaniem modeli jest predykcja liczby kalorii, tłuszczów, węglowodanów oraz białek. 
@@ -427,7 +427,7 @@ W pliku \texttt{neural\_network.py} testujemy sieć neuronową \texttt{MultiTarg
 \begin{itemize}
     \item Na podstawie naszych obserwacji najlepszym wektoryzerem jest generalnie TF-IDF. Wyniki pomiędzy naszą implementacją, implementacją ze scikit-learn oraz połączenie z manualem dawały różne wyniki dla różnych modeli, zatem nie możemy określić, który z nich jest absolutnie najlepszy. 
     \item Analizując proste modele, możemy zauważyć, że są one w stanie dość dobrze przewidzieć wynik ($R^2$ około 0.25). Jednak aby uzyskać lepsze wyniki, potrzebujemy dość złożonych modeli jak LGBM z 1000 drzew, lub dużej sieci neuronowej. 
-    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, następny była sieć neuronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
+    \item Najlepszy uzyskany wynik to 0.43 dla kalorii i 0.58 dla białek, następna była sieć neuronowa z PyTorch z wynikami odpowiednio 0.41 i 0.57. 
     \item Każdy model najlepiej radził sobie z szacowaniem ilości białek, prawdopodobnie dlatego, że białko pochodzi ze ściśle określonych produktów (np. kurczak albo mleko), a pozostałe rzeczy występują praktycznie wszędzie. 
     \item Biorąc pod uwagę trudność przewidywania kalorii, uznajemy nasze wyniki za zadowalające.
 \end{itemize}    
