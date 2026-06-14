@@ -6,7 +6,7 @@ data/recipes.csv
 *.aux
 *.fdb_latexmk
 *.fls
-*.log
+raport.log
 *.synctex.gz
 
 *.pdf
